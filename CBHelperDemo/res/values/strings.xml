@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CBHelperDemo</string>
+    <string name="title_section5">Functions</string>
+    <string name="title_section4">Notifications</string>
+    <string name="title_section3">Data</string>
+    <string name="title_section2">Log</string>
+    <string name="title_section1">Settings</string>
+    <string name="menu_settings">Settings</string>
+    <string name="app_code_hint">Application Code</string>
+    <string name="app_uniq_hint">Application Unique</string>
+    <string name="app_pwd_hint">Application Password</string>
+    <string name="c2dm_hint">C2DM Sender Email</string>
+    <string name="save_button_text">Save</string>
+    <string name="settings_title">Settings</string>
+    <string name="log_title">Log</string>
+    <string name="log_line_hint">Log line</string>
+    <string name="log_category_hint">Log category</string>
+    <string name="log_default_category">DEFAULT</string>
+    <string-array name="log_severity">
+        <item>DEBUG</item>
+        <item>INFO</item>
+        <item>WARNING</item>
+        <item>ERROR</item>
+        <item>FATAL</item>
+        <item>EVENT</item>
+    </string-array>
+    <string name="log_severity_prompt">Select severity</string>
+    <string name="log_button_text">Write Log</string>
+    <string name="data_title">Data</string>
+    <string name="insert_button_text">Insert Object</string>
+    <string name="insert_file_button_text">Insert Object with File</string>
+    <string name="search_button_text">Search Objects</string>
+    <string name="file_id_hint">cloudbase.io File ID</string>
+    <string name="download_button_text">Download Attachment</string>
+    <string name="notif_title">Notifications</string>
+    <string name="notif_channel_hint">Notification channel</string>
+    <string name="sub_button_text">Subscribe to Channel</string>
+    <string name="unsub_button_text">Unsubscribe from Channel</string>
+    <string name="notif_hint">Notification Text</string>
+    <string name="push_notif_button_text">Push Notification</string>
+    <string name="functions_title">CloudFunctions</string>
+    <string name="function_hint">CloudFunction code</string>
+    <string name="call_function_button_text">Execute CloudFunction</string>
+    <string name="call_applet_button_text">Execute Demo Applet</string>
+</resources>
