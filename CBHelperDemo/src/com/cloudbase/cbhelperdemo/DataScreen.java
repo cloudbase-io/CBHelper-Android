@@ -1,3 +1,19 @@
+/* Copyright (C) 2012 cloudbase.io
+ 
+ This program is free software; you can redistribute it and/or modify it under
+ the terms of the GNU General Public License, version 2, as published by
+ the Free Software Foundation.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program; see the file COPYING.  If not, write to the Free
+ Software Foundation, 59 Temple Place - Suite 330, Boston, MA
+ 02111-1307, USA.
+ */
 package com.cloudbase.cbhelperdemo;
 
 import com.cloudbase.CBHelperResponder;
@@ -50,6 +66,7 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 	@Override
 	public void onStart() {
 		super.onStart();
+		
 		((Button)this.getView().findViewById(R.id.insertButton)).setOnClickListener(this);
 		((Button)this.getView().findViewById(R.id.insertFileButton)).setOnClickListener(this);
 		((Button)this.getView().findViewById(R.id.searchButton)).setOnClickListener(this);
@@ -59,19 +76,21 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 	@Override
 	public void onClick(View v) {
 		if (v.getId() == R.id.insertButton) {
-			Log.d("DEMOAPP", "Pressed insert button");
 			TestDataObject obj = this.createObject();
-			
+			// use the shared object and send an insert to the basic data object
 			((MainActivity)this.getActivity()).helper.insertDocument(obj, "android_demo_collection");
 		}
 		
 		if (v.getId() == R.id.insertFileButton) {
+			// create a photopicker to attach a file. the insert completes in the onActivityResult
 			Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
 			photoPickerIntent.setType("image/*");
 			startActivityForResult(photoPickerIntent, 1);
 		}
 		
 		if (v.getId() == R.id.searchButton) {
+			// run a search over the test collection for all the objects with firstName of "cloud". Should be all of them.
+			// this Fragment is also the responder
 			CBSearchCondition cond = new CBSearchCondition("firstName", CBSearchConditionOperator.CBOperatorEqual, "cloud");
 			
 			((MainActivity)this.getActivity()).helper.searchDocument("android_demo_collection", cond, this);
@@ -81,6 +100,7 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 			TextView fileIdText = (TextView)this.getView().findViewById(R.id.fileIdText);
 			String fileId = fileIdText.getText().toString();
 			
+			// download file and show the image in a popup view - This Fragment is also the responder
 			((MainActivity)this.getActivity()).helper.downloadFile(fileId, this);
 		}
     }
@@ -96,7 +116,7 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 			 attachments.add(new File(getRealPathFromURI(mImageCaptureUri)));
 			 
 			 TestDataObject obj = this.createObject();
-			 
+			 // we have the file now run the insert
 			 ((MainActivity)this.getActivity()).helper.insertDocument(obj, "android_demo_collection", attachments, null);
 		 }
 	 }
@@ -121,9 +141,11 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 	@SuppressWarnings("unchecked")
 	@Override
 	public void handleResponse(CBHelperResponse res) {
+		// we are downloading a file
 		if (res.getFunction().equals("download")) {
 			if (res.getDownloadedFile() != null) {
 				try {
+					// resize the downloaded image and display it in an ImageView
 					BitmapFactory.Options options = new BitmapFactory.Options();
 					options.inJustDecodeBounds = true;
 					BitmapFactory.decodeFile(res.getDownloadedFile().getAbsolutePath(), options);
@@ -168,7 +190,8 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 			}
 		} else {
 			if (res.getData() instanceof List) {
-				
+				// if we are not downloading and just running the search then read the array of result and
+				// print the size.
 				Log.d("DEMOAPP", "Is is array");
 				AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
 				builder.setTitle("Received response");
