@@ -130,9 +130,9 @@ public class SettingsScreen extends Fragment implements OnClickListener {
     } 
 	
 	private void initHelper(boolean reInit) {
-		if (((MainActivity)this.getActivity()).helper == null || reInit) {
-			((MainActivity)this.getActivity()).helper = new CBHelper(appCode_, appUniq_, this.getActivity());
-			((MainActivity)this.getActivity()).helper.setPassword(appPwd_);
+		if (MainActivity.helper == null || reInit) {
+			MainActivity.helper = new CBHelper(appCode_, appUniq_, this.getActivity());
+			MainActivity.helper.setPassword(appPwd_);
 			Log.d("DEMOAPP", "initialised helper...");
 		}
 		// if an email address for the C2DM service is set then try and register for push

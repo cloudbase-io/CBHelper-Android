@@ -61,18 +61,18 @@ public class NotificationScreen extends Fragment implements OnClickListener  {
 		if (regId != null && !regId.equals("")) { // if we have a registration id.
 			if (v.getId() == R.id.subscribeButton) {
 				// subscribe to a notification channel
-				((MainActivity)this.getActivity()).helper.notificationSubscribeDevice(regId, channelText.getText().toString());
+				MainActivity.helper.notificationSubscribeDevice(regId, channelText.getText().toString());
 			}
 			
 			if (v.getId() == R.id.unsubscribeButton) {
 				// unsubscribe from a channel
-				((MainActivity)this.getActivity()).helper.notificationUnsubscribeDevice(regId, channelText.getText().toString());
+				MainActivity.helper.notificationUnsubscribeDevice(regId, channelText.getText().toString());
 			}
 			
 			if (v.getId() == R.id.pushNotifButton) {
 				// send a push notification. This needs to be enabled in the security settings in the 
 				// application's cloudbase.io control panel - allow client devices to send notifications
-				((MainActivity)this.getActivity()).helper.sendNotification(notifText.getText().toString(), channelText.getText().toString());
+				MainActivity.helper.sendNotification(notifText.getText().toString(), channelText.getText().toString());
 			}
 		} else {
 			Log.d("DEMOAPP", "The application is not registered for C2DM notifications");

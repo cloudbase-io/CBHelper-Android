@@ -78,7 +78,7 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 		if (v.getId() == R.id.insertButton) {
 			TestDataObject obj = this.createObject();
 			// use the shared object and send an insert to the basic data object
-			((MainActivity)this.getActivity()).helper.insertDocument(obj, "android_demo_collection");
+			MainActivity.helper.insertDocument(obj, "android_demo_collection");
 		}
 		
 		if (v.getId() == R.id.insertFileButton) {
@@ -92,8 +92,9 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 			// run a search over the test collection for all the objects with firstName of "cloud". Should be all of them.
 			// this Fragment is also the responder
 			CBSearchCondition cond = new CBSearchCondition("firstName", CBSearchConditionOperator.CBOperatorEqual, "cloud");
-			
-			((MainActivity)this.getActivity()).helper.searchDocument("android_demo_collection", cond, this);
+			cond.addSortField("firstName", -1);
+			cond.setLimit(1);
+			MainActivity.helper.searchDocument("android_demo_collection", cond, this);
 		}
 		
 		if (v.getId() == R.id.downloadButton) {
@@ -101,7 +102,7 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 			String fileId = fileIdText.getText().toString();
 			
 			// download file and show the image in a popup view - This Fragment is also the responder
-			((MainActivity)this.getActivity()).helper.downloadFile(fileId, this);
+			MainActivity.helper.downloadFile(fileId, this);
 		}
     }
 	
@@ -117,7 +118,7 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 			 
 			 TestDataObject obj = this.createObject();
 			 // we have the file now run the insert
-			 ((MainActivity)this.getActivity()).helper.insertDocument(obj, "android_demo_collection", attachments, null);
+			 MainActivity.helper.insertDocument(obj, "android_demo_collection", attachments, null);
 		 }
 	 }
 	 

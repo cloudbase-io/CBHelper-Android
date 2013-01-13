@@ -22,8 +22,11 @@ import java.util.Map;
 
 import com.cloudbase.CBHelperResponder;
 import com.cloudbase.CBHelperResponse;
+import com.cloudbase.CBPayPalBill;
+import com.cloudbase.CBPayPalBillItem;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -57,6 +60,7 @@ public class FunctionScreen extends Fragment implements OnClickListener, CBHelpe
 		super.onStart();
 		((Button)this.getView().findViewById(R.id.callFunctionButton)).setOnClickListener(this);
 		((Button)this.getView().findViewById(R.id.callAppletButton)).setOnClickListener(this);
+		((Button)this.getView().findViewById(R.id.callPayPalButton)).setOnClickListener(this);
 	}
 	
 	@Override
@@ -65,7 +69,7 @@ public class FunctionScreen extends Fragment implements OnClickListener, CBHelpe
 		
 		if (v.getId() == R.id.callFunctionButton) {
 			// execute the cloudfunction
-			((MainActivity)this.getActivity()).helper.runCloudFunction(functionText.getText().toString(), null, this);
+			MainActivity.helper.runCloudFunction(functionText.getText().toString(), null, this);
 		}
 		
 		if (v.getId() == R.id.callAppletButton) {
@@ -75,7 +79,27 @@ public class FunctionScreen extends Fragment implements OnClickListener, CBHelpe
 			Map<String, String> params = new HashMap<String, String>();
 			params.put("search", "#bgee");
 			
-			((MainActivity)this.getActivity()).helper.runApplet(appletCode, params, this);
+			MainActivity.helper.runApplet(appletCode, params, this);
+		}
+		
+		if (v.getId() == R.id.callPayPalButton) {
+			CBPayPalBillItem billItem = new CBPayPalBillItem();
+			billItem.setName("test paypal paymnet");
+			billItem.setDescription("this is a test paypal bill for $9.99");
+			billItem.setAmount(9.99);
+			billItem.setTax(0);
+			billItem.setQuantity(1);
+			
+			CBPayPalBill bill = new CBPayPalBill();
+			bill.setName("test paypal bill");
+			bill.setDescription("test papal bill for $9.99");
+			bill.setCurrency("USD");
+			bill.setInvoiceNumber("test-invoice-01");
+			bill.setPaymentCancelledFunction("");
+			bill.setPaymentCompletedFunction("");
+			bill.addNewItem(billItem);
+			
+			MainActivity.helper.preparePayPalPurchase(bill, false, this);
 		}
     }
 	
@@ -114,9 +138,19 @@ public class FunctionScreen extends Fragment implements OnClickListener, CBHelpe
 				builder.setPositiveButton("OK", null);
 				builder.show();
 			}
-		} else {
+		} else if (res.getFunction().equals("cloudfunction") ){
 			// if we just called a cloudfunction then simply log the output
 			Log.d("DEMOAPP", "CloudFunction output: " + res.getResponseDataString());
+		} else {
+			// paypal
+			if (res.getData() instanceof Map) {
+				@SuppressWarnings("rawtypes")
+				String url = (String)((Map)res.getData()).get("checkout_url");
+				
+				Intent intent = new Intent(this.getActivity(), PayPal.class);
+				intent.putExtra("url", url);
+				this.getActivity().startActivity(intent);
+			}
 		}
 	}
 }

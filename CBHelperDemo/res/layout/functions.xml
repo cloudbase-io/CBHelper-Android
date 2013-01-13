@@ -47,4 +47,14 @@
         android:layout_marginRight="14dp"
         android:text="@string/call_applet_button_text" />
 
+    <Button
+        android:id="@+id/callPayPalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/callAppletButton"
+        android:layout_alignRight="@+id/callAppletButton"
+        android:layout_below="@+id/callAppletButton"
+        android:layout_marginTop="26dp"
+        android:text="@string/call_paypal_button_text" />
+
 </RelativeLayout>

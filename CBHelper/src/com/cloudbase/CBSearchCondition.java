@@ -32,17 +32,25 @@ import android.location.Location;
  */
 public class CBSearchCondition {
 	private List<CBSearchCondition> subConditions;
+	private List<Map<String, String>> sortKeys;
+	/**
+	 * This property is the maximum number of results to be returned by the search
+	 */
+	private int limit;
 	private String field;
 	private Object value;
 	private CBSearchConditionOperator operator;
 	private CBSearchConditionLink link;
 	
 	public static final String CBSearchKey = "cb_search_key";
+	public static final String CBSortKey = "cb_sort_key";
+	public static final String CBLimitKey = "cb_limit";
 	
 	/**
 	 * Creates an empty search condition object
 	 */
 	public CBSearchCondition() {
+		this.limit = -1;
 	}
 	
 	/**
@@ -55,6 +63,7 @@ public class CBSearchCondition {
 		this.setField(fname);
 		this.setOperator(op);
 		this.setValue(value);
+		this.limit = -1;
 	}
 	
 	/**
@@ -77,6 +86,7 @@ public class CBSearchCondition {
         	searchQuery.put("$maxDistance", Integer.valueOf(maxDistance));
 
         this.setValue(searchQuery);
+        this.limit = -1;
 	}
 	
 	/**
@@ -107,6 +117,7 @@ public class CBSearchCondition {
 		this.setField("cb_location");
 		this.setOperator(CBSearchConditionOperator.CBOperatorEqual);
 		this.setValue(searchQuery);
+		this.limit = -1;
 	}
 	
 	public void addAnd(String field, CBSearchConditionOperator op, Object value)
@@ -151,6 +162,21 @@ public class CBSearchCondition {
 		this.subConditions.add(newCond);
 	}
 	
+	/**
+	 * Add a sorting condition to your search. You can add multiple fields to sort by.
+	 * It is only possible to sort on top level fields and not on objects.
+	 * @param field The name of the field in the collection
+	 * @param direction The direction of the sort (1 = ascending / -1 = descending)
+	 */
+	public void addSortField(String field, int direction) {
+		if (this.sortKeys == null)
+			this.sortKeys = new ArrayList<Map<String, String>>();
+		
+		Map<String, String> newSortField = new HashMap<String, String>();
+		newSortField.put(field, "" + direction);
+		this.sortKeys.add(newSortField);
+	}
+	
 	// returns the Map of conditions to be serialized to json and included 
 	// in a request
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -164,6 +190,12 @@ public class CBSearchCondition {
 	    }
 	    else
 	        finalConditions = conds;
+	    
+	    if (this.sortKeys != null)
+	    	finalConditions.put(CBSortKey, this.sortKeys);
+	    
+	    if (this.getLimit() > 0)
+	    	finalConditions.put(CBLimitKey, "" + this.getLimit());
 	    
 	    return finalConditions;
 	}
@@ -261,5 +293,13 @@ public class CBSearchCondition {
 	}
 	public void setLink(CBSearchConditionLink link) {
 		this.link = link;
+	}
+
+	public int getLimit() {
+		return limit;
+	}
+
+	public void setLimit(int limit) {
+		this.limit = limit;
 	}
 }

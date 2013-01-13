@@ -147,7 +147,7 @@ public class CBHelperRequest implements Runnable {
 				    	String responseString = EntityUtils.toString(response.getEntity());
 				    	
 					    resp.setResponseDataString(responseString);
-					    
+					    Log.d("test", resp.getResponseDataString());
 					    // Use the cloudbase.io deserializer to get the data in a Map<String, Object>
 					    // format.
 					    GsonBuilder gsonBuilder = new GsonBuilder();

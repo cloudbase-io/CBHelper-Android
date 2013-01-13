@@ -36,7 +36,7 @@ public class MainActivity extends FragmentActivity implements
 	 * current tab position.
 	 */
 	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
-	public CBHelper helper;
+	public static CBHelper helper;
 	public String c2dmRegistrationId;
 
 	public void registerForNotifications(String c2dmId) {

@@ -43,4 +43,6 @@
     <string name="function_hint">CloudFunction code</string>
     <string name="call_function_button_text">Execute CloudFunction</string>
     <string name="call_applet_button_text">Execute Demo Applet</string>
+    <string name="pp_close_button">Close</string>
+    <string name="call_paypal_button_text">Test PayPal Payment</string>
 </resources>

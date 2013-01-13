@@ -727,6 +727,90 @@ public class CBHelper implements CBHelperResponder {
         t.start();
 	}
 	
+	/**
+	 * Initiates a transaction with PayPal by sending the payment details and retrieving a token
+	 * and an express checkout url. The url returned should be then opened in a browser window.
+	 * @param purchaseDetails a populated CBPayPalBill object
+	 * @param isLiveEnvironment whether we are using the production or sandbox paypal environments
+	 * @param responder a responder to handle the returned PayPal token and submission url
+	 */
+	public void preparePayPalPurchase(CBPayPalBill purchaseDetails, boolean isLiveEnvironment, CBHelperResponder responder) {
+		String url = this.getUrl() + this.appCode + "/paypal/prepare";
+		
+		Hashtable<String, Object> postData = new Hashtable<String, Object>();
+		postData.put("environment", isLiveEnvironment?"live":"sandbox");
+		postData.put("currency", purchaseDetails.getCurrency());
+		postData.put("type", "purchase");
+		postData.put("completed_cloudfunction", purchaseDetails.getPaymentCompletedFunction());
+		postData.put("cancelled_cloudfunction", purchaseDetails.getPaymentCancelledFunction());
+		postData.put("purchase_details", purchaseDetails.serializePurchase());
+		
+		if (purchaseDetails.getPaymentCompletedUrl() != null)
+			postData.put("payment_completed_url", purchaseDetails.getPaymentCompletedUrl());
+		
+		if (purchaseDetails.getPaymentCancelledUrl() != null)
+			postData.put("payment_cancelled_url", purchaseDetails.getPaymentCancelledUrl());
+		
+		Hashtable<String, String> preparedPost = this.preparePostParams(postData, null);
+		
+		CBHelperRequest req = new CBHelperRequest(url, "paypal");
+		req.setPostData(preparedPost);
+		if (responder != null) {
+			req.setResponder(responder);
+			Handler handler = new Handler();
+			req.setmHandler(handler);
+		}
+		
+		Thread t = new Thread(req);
+        t.start();
+	}
+	
+	/**
+	 * Once the PayPal purchase is completed this method updates the record in the cloudbase.io database.
+	 * The responder can then proceed to close the payment window using the output of the call
+	 * @param url The url returned by PayPal once the payment is completed
+	 * @param responder The responder to complete the payment in the application
+	 */
+	public void completePayPalPurchase(String url, CBHelperResponder responder) {
+		Hashtable<String, String> preparedPost = this.preparePostParams(new Hashtable<String, String>(), null);
+		
+		CBHelperRequest req = new CBHelperRequest(url, "paypal");
+		req.setPostData(preparedPost);
+		if (responder != null) {
+			req.setResponder(responder);
+			Handler handler = new Handler();
+			req.setmHandler(handler);
+		}
+		
+		Thread t = new Thread(req);
+        t.start();
+	}
+	
+	/**
+	 * Returns all of the details of a payment which has been prepared.
+	 * @param paymentId The payment_id returned by the cloudbase.io APIs when the payment is prepared
+	 * @param responder A responder to handle the details
+	 */
+	public void getPayPalPaymentDetails(String paymentId, CBHelperResponder responder) {
+		String url = this.getUrl() + this.appCode + "/paypal/payment-details";
+		
+		Hashtable<String, Object> postData = new Hashtable<String, Object>();
+		postData.put("payment_id", paymentId);
+		
+		Hashtable<String, String> preparedPost = this.preparePostParams(postData, null);
+		
+		CBHelperRequest req = new CBHelperRequest(url, "paypal");
+		req.setPostData(preparedPost);
+		if (responder != null) {
+			req.setResponder(responder);
+			Handler handler = new Handler();
+			req.setmHandler(handler);
+		}
+		
+		Thread t = new Thread(req);
+        t.start();
+	}
+	
 	// this function is used only by the helper class and it registers the device
 	// with the cloudbase.io APIs. This is used to get a session_id used by the logNavigation
 	// method. To receive the session_id the CBHelper object itself is a responder

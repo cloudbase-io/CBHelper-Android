@@ -72,7 +72,7 @@ public class LogScreen extends Fragment implements OnClickListener  {
 			return;
 		}
 		// call the log APIs from the shared CBHelper in the MainActivity
-		((MainActivity)this.getActivity()).helper.log(
+		MainActivity.helper.log(
 				logLineText.getText().toString(), 
 				CBLogLevel.valueOf(logSeverityString), 
 				logCategory.getText().toString());
