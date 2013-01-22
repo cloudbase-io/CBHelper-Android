@@ -26,6 +26,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloudbase.datacommands.CBDataAggregationCommand;
+import com.cloudbase.datacommands.CBSearchCondition;
 import com.google.gson.Gson;
 
 import android.content.Context;
@@ -512,6 +514,42 @@ public class CBHelper implements CBHelperResponder {
 	    String url = this.getUrl() + this.appCode + "/" + collection + "/search";
 	    
 	    Hashtable<String, String> preparedPost = this.preparePostParams(serializedConditions, null);
+		CBHelperRequest req = new CBHelperRequest(url, "data");
+		req.setPostData(preparedPost);
+		// set the responder if we have one and run give the CBHttpRequest object a Handler
+		// to be able to return data to the main UI thread
+		if (responder != null) {
+			req.setResponder(responder);
+			Handler handler = new Handler();
+			req.setmHandler(handler);
+		}
+		
+		Thread t = new Thread(req);
+        t.start();
+	}
+	
+	/**
+	 * Runs a search over a collection and applies the given list of aggregation commands to the output.
+	 * @param collection The name of the collection to run the search over
+	 * @param aggregateConditions A List of CBDataAggregationCommand objects
+	 * @param handler a block of code to be executed once the request is completed
+	 */
+	public void searchDocumentAggregate(String collection, List<CBDataAggregationCommand> aggregateConditions, CBHelperResponder responder) {
+		List<Map<String, Object>> serializedAggregateConditions = new ArrayList<Map<String, Object>>();
+		
+		for (CBDataAggregationCommand curComm : aggregateConditions) {
+			Map<String, Object> curSerializedCondition = new HashMap<String, Object>();
+			curSerializedCondition.put(curComm.getCommandType().toString(), curComm.serializeAggregateConditions());
+			
+			serializedAggregateConditions.add(curSerializedCondition);
+		}
+		
+		String url = this.getUrl() + this.appCode + "/" + collection + "/aggregate";
+	    
+		HashMap<String, Object> paramsToPrepare = new HashMap<String, Object>();
+		paramsToPrepare.put("cb_aggregate_key", serializedAggregateConditions);
+		
+	    Hashtable<String, String> preparedPost = this.preparePostParams(paramsToPrepare, null);
 		CBHelperRequest req = new CBHelperRequest(url, "data");
 		req.setPostData(preparedPost);
 		// set the responder if we have one and run give the CBHttpRequest object a Handler

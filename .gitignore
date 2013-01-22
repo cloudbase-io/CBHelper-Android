@@ -22,3 +22,5 @@ local.properties
 
 # Mac files
 .DS_Store
+
+CBHelper/libs/android-support-v4.jar

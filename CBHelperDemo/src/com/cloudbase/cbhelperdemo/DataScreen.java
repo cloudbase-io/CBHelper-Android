@@ -18,8 +18,7 @@ package com.cloudbase.cbhelperdemo;
 
 import com.cloudbase.CBHelperResponder;
 import com.cloudbase.CBHelperResponse;
-import com.cloudbase.CBSearchCondition;
-import com.cloudbase.CBSearchConditionOperator;
+import com.cloudbase.datacommands.*;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -94,7 +93,24 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 			CBSearchCondition cond = new CBSearchCondition("firstName", CBSearchConditionOperator.CBOperatorEqual, "cloud");
 			cond.addSortField("firstName", -1);
 			cond.setLimit(1);
+			
+			/*
+			List<CBDataAggregationCommand> aggregationCommands = new ArrayList<CBDataAggregationCommand>();
+			
+			CBDataAggregationCommandProject projectCommand = new CBDataAggregationCommandProject();
+			projectCommand.getIncludeFields().add("Symbol");
+			projectCommand.getIncludeFields().add("Price");
+			projectCommand.getIncludeFields().add("total");
+			aggregationCommands.add(projectCommand);
+			
+			CBDataAggregationCommandGroup groupCommand = new CBDataAggregationCommandGroup();
+			groupCommand.addOutputField("Symbol");
+			groupCommand.addGroupFormulaForField("total", CBDataAggregationGroupOperator.CBDataAggregationGroupSum, "Price");
+			aggregationCommands.add(groupCommand);
+			*/
 			MainActivity.helper.searchDocument("android_demo_collection", cond, this);
+			//MainActivity.helper.searchDocumentAggregate("security_master_3", aggregationCommands, this);
+			
 		}
 		
 		if (v.getId() == R.id.downloadButton) {

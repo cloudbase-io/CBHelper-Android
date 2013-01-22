@@ -14,7 +14,7 @@
  Software Foundation, 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  */
-package com.cloudbase;
+package com.cloudbase.datacommands;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import android.location.Location;
  * @author Stefano Buliani
  *
  */
-public class CBSearchCondition {
+public class CBSearchCondition extends CBDataAggregationCommand {
 	private List<CBSearchCondition> subConditions;
 	private List<Map<String, String>> sortKeys;
 	/**
@@ -51,6 +51,8 @@ public class CBSearchCondition {
 	 */
 	public CBSearchCondition() {
 		this.limit = -1;
+		
+		this.setCommandType(CBDataAggregationCommandType.CBDataAggregationMatch);
 	}
 	
 	/**
@@ -64,6 +66,8 @@ public class CBSearchCondition {
 		this.setOperator(op);
 		this.setValue(value);
 		this.limit = -1;
+		
+		this.setCommandType(CBDataAggregationCommandType.CBDataAggregationMatch);
 	}
 	
 	/**
@@ -87,6 +91,8 @@ public class CBSearchCondition {
 
         this.setValue(searchQuery);
         this.limit = -1;
+        
+        this.setCommandType(CBDataAggregationCommandType.CBDataAggregationMatch);
 	}
 	
 	/**
@@ -118,6 +124,8 @@ public class CBSearchCondition {
 		this.setOperator(CBSearchConditionOperator.CBOperatorEqual);
 		this.setValue(searchQuery);
 		this.limit = -1;
+		
+		this.setCommandType(CBDataAggregationCommandType.CBDataAggregationMatch);
 	}
 	
 	public void addAnd(String field, CBSearchConditionOperator op, Object value)
@@ -175,6 +183,11 @@ public class CBSearchCondition {
 		Map<String, String> newSortField = new HashMap<String, String>();
 		newSortField.put(field, "" + direction);
 		this.sortKeys.add(newSortField);
+	}
+	
+	@Override
+	public Object serializeAggregateConditions() {
+		return this.serializeConditions(this);
 	}
 	
 	// returns the Map of conditions to be serialized to json and included 
