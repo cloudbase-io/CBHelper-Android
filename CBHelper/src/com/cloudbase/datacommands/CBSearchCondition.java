@@ -229,14 +229,14 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 	            for (CBSearchCondition curGroup : conditionsGroup.getSubConditions())
 	            {
 	                if (prevLink != null && prevLink != curGroup.getLink()) {
-	                	output.put(prevLink.toString(), curGroup);
+	                	output.put(prevLink.toString(), curObject);
 	                    curObject = new ArrayList<Object>();
 	                }
 	                curObject.add(this.serializeConditions(curGroup));
 	                prevLink = curGroup.getLink();
 	                count++;
 	                if (count == conditionsGroup.getSubConditions().size()) {
-	                	output.put(prevLink.toString(), curGroup);
+	                	output.put(prevLink.toString(), curObject);
 	                }
 	            }
 	        }
