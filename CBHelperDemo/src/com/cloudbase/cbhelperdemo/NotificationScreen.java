@@ -72,7 +72,7 @@ public class NotificationScreen extends Fragment implements OnClickListener  {
 			if (v.getId() == R.id.pushNotifButton) {
 				// send a push notification. This needs to be enabled in the security settings in the 
 				// application's cloudbase.io control panel - allow client devices to send notifications
-				MainActivity.helper.sendNotification(notifText.getText().toString(), channelText.getText().toString());
+				MainActivity.helper.sendNotification(notifText.getText().toString(), channelText.getText().toString(), false);
 			}
 		} else {
 			Log.d("DEMOAPP", "The application is not registered for C2DM notifications");

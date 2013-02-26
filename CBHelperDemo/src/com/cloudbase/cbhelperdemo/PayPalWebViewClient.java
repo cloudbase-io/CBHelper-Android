@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.cloudbase.CBHelperResponder;
 import com.cloudbase.CBHelperResponse;
+import com.cloudbase.CBQueuedRequest;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -40,7 +41,7 @@ public class PayPalWebViewClient extends WebViewClient implements CBHelperRespon
 
 	@Override
 	@SuppressWarnings("rawtypes")
-	public void handleResponse(CBHelperResponse res) {
+	public void handleResponse(CBQueuedRequest req, CBHelperResponse res) {
 		if (res.getData() instanceof Map) {
 			
 			if (((Map)res.getData()).containsKey("amount")) {

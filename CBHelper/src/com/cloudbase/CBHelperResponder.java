@@ -25,8 +25,9 @@ package com.cloudbase;
  */
 public interface CBHelperResponder {
 	/**
-	 * Do something with the response data
-	 * @param res The parsed response object
+	 * Receive the response data as well as the original request data
+	 * @param req A CBQueuedRequest object with all of the details of the call
+	 * @param res A populated CBHelperResponse object
 	 */
-	void handleResponse(CBHelperResponse res);
+	void handleResponse(CBQueuedRequest req, CBHelperResponse res);
 }

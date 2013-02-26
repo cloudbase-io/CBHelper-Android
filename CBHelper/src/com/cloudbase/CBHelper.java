@@ -17,6 +17,8 @@
 package com.cloudbase;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,9 +34,12 @@ import com.google.gson.Gson;
 
 import android.content.Context;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings.Secure;
+import android.util.Log;
 
 /*! \mainpage cloudbase.io Android Helper Class Reference
 *
@@ -107,14 +112,19 @@ public class CBHelper implements CBHelperResponder {
 	private String country;
 	private String sessionId;
 	
+	private Context applicationActivity;
+	
 	// this is used when downloading attachments from the CloudBase - temporary files
 	// are saved in the application files folder and handed back to the application 
 	private String temporaryFilesPath;
 	
+	private CBHelperResponder defaultQueueResponder;
+	
+	private boolean debugMode;
+	
 	private static String apiURL = "api.cloudbase.io";
 	private static final String defaultLogCategory = "DEFAULT";
-	@SuppressWarnings("unused")
-	private static final String logTag = "CBHELPER";
+	public static final String logTag = "CBHELPER";
 	
 	
 	private boolean deviceRegistered;
@@ -136,12 +146,14 @@ public class CBHelper implements CBHelperResponder {
 		this.deviceUniqueIdentifier = Secure.ANDROID_ID;
 		this.userAuthentication = false;
 		this.https = true;
+		this.debugMode = false;
 		
 		this.language = Locale.getDefault().getLanguage();
 		this.country = Locale.getDefault().getCountry();
 		
 		this.deviceRegistered = false;
 		this.temporaryFilesPath = activity.getCacheDir().getAbsolutePath();
+		this.applicationActivity = activity;
 		//Log.d(logTag, "CBHelper initialized");
 	}
 	
@@ -149,9 +161,8 @@ public class CBHelper implements CBHelperResponder {
 	 * Logs an event to the cloudbase.io application log
 	 * @param logLine The content of the line to be logged
 	 */
-	public void logEvent(String logLine)
-	{
-		this.log(logLine, CBLogLevel.EVENT, null, null);
+	public void logEvent(String logLine) {
+		this.log(logLine, CBLogLevel.EVENT, null, null, false);
 	}
 	/**
 	 * Logs an event to the cloudbase.io application log
@@ -159,9 +170,8 @@ public class CBHelper implements CBHelperResponder {
 	 * @param category The category of the log line. This is a free text string and can be used to separate different
 	 * 	sections of the application and events
 	 */
-	public void logEvent(String logLine, String category)
-	{
-		this.log(logLine, CBLogLevel.EVENT, category, null);
+	public void logEvent(String logLine, String category) {
+		this.log(logLine, CBLogLevel.EVENT, category, null, false);
 	}
 	/**
 	 * Logs an event to the cloudbase.io application log
@@ -171,18 +181,16 @@ public class CBHelper implements CBHelperResponder {
 	 * @param responder A responder to handle the return value from the cloudbase.io APIs. This is an optional parameter
 	 * 	and can be sent as null
 	 */
-	public void logEvent(String logLine, String category, CBHelperResponder responder)
-	{
-		this.log(logLine, CBLogLevel.EVENT, category, responder);
+	public void logEvent(String logLine, String category, CBHelperResponder responder) {
+		this.log(logLine, CBLogLevel.EVENT, category, responder, false);
 	}
 	
 	/**
 	 * Logs a fatal exception to the cloudbase.io application log
 	 * @param logLine The content of the line to be logged
 	 */
-	public void logFatal(String logLine)
-	{
-		this.log(logLine, CBLogLevel.FATAL, null, null);
+	public void logFatal(String logLine) {
+		this.log(logLine, CBLogLevel.FATAL, null, null, false);
 	}
 	/**
 	 * Logs a fatal exception to the cloudbase.io application log
@@ -190,9 +198,8 @@ public class CBHelper implements CBHelperResponder {
 	 * @param category The category of the log line. This is a free text string and can be used to separate different
 	 * 	sections of the application and events
 	 */
-	public void logFatal(String logLine, String category)
-	{
-		this.log(logLine, CBLogLevel.FATAL, category, null);
+	public void logFatal(String logLine, String category) {
+		this.log(logLine, CBLogLevel.FATAL, category, null, false);
 	}
 	/**
 	 * Logs a fatal exception to the cloudbase.io application log
@@ -202,18 +209,16 @@ public class CBHelper implements CBHelperResponder {
 	 * @param responder A responder to handle the return value from the cloudbase.io APIs. This is an optional parameter
 	 * 	and can be sent as null
 	 */
-	public void logFatal(String logLine, String category, CBHelperResponder responder)
-	{
-		this.log(logLine, CBLogLevel.FATAL, category, responder);
+	public void logFatal(String logLine, String category, CBHelperResponder responder) {
+		this.log(logLine, CBLogLevel.FATAL, category, responder, false);
 	}
 	
 	/**
 	 * Logs an error to the cloudbase.io application log
 	 * @param logLine The content of the line to be logged
 	 */
-	public void logError(String logLine)
-	{
-		this.log(logLine, CBLogLevel.ERROR, null, null);
+	public void logError(String logLine) {
+		this.log(logLine, CBLogLevel.ERROR, null, null, false);
 	}
 	/**
 	 * Logs an error to the cloudbase.io application log
@@ -221,9 +226,8 @@ public class CBHelper implements CBHelperResponder {
 	 * @param category The category of the log line. This is a free text string and can be used to separate different
 	 * 	sections of the application and events
 	 */
-	public void logError(String logLine, String category)
-	{
-		this.log(logLine, CBLogLevel.ERROR, category, null);
+	public void logError(String logLine, String category) {
+		this.log(logLine, CBLogLevel.ERROR, category, null, false);
 	}
 	/**
 	 * Logs an error to the cloudbase.io application log
@@ -233,18 +237,16 @@ public class CBHelper implements CBHelperResponder {
 	 * @param responder A responder to handle the return value from the cloudbase.io APIs. This is an optional parameter
 	 * 	and can be sent as null
 	 */
-	public void logError(String logLine, String category, CBHelperResponder responder)
-	{
-		this.log(logLine, CBLogLevel.ERROR, category, responder);
+	public void logError(String logLine, String category, CBHelperResponder responder) {
+		this.log(logLine, CBLogLevel.ERROR, category, responder, false);
 	}
 	
 	/**
 	 * Logs a warning to the cloudbase.io application log
 	 * @param logLine The content of the line to be logged
 	 */
-	public void logWarning(String logLine)
-	{
-		this.log(logLine, CBLogLevel.WARNING, null, null);
+	public void logWarning(String logLine) {
+		this.log(logLine, CBLogLevel.WARNING, null, null, false);
 	}
 	/**
 	 * Logs a warning to the cloudbase.io application log
@@ -252,9 +254,8 @@ public class CBHelper implements CBHelperResponder {
 	 * @param category The category of the log line. This is a free text string and can be used to separate different
 	 * 	sections of the application and events
 	 */
-	public void logWarning(String logLine, String category)
-	{
-		this.log(logLine, CBLogLevel.WARNING, category, null);
+	public void logWarning(String logLine, String category) {
+		this.log(logLine, CBLogLevel.WARNING, category, null, false);
 	}
 	/**
 	 * Logs a warning to the cloudbase.io application log
@@ -264,18 +265,16 @@ public class CBHelper implements CBHelperResponder {
 	 * @param responder A responder to handle the return value from the cloudbase.io APIs. This is an optional parameter
 	 * 	and can be sent as null
 	 */
-	public void logWarning(String logLine, String category, CBHelperResponder responder)
-	{
-		this.log(logLine, CBLogLevel.WARNING, category, responder);
+	public void logWarning(String logLine, String category, CBHelperResponder responder) {
+		this.log(logLine, CBLogLevel.WARNING, category, responder, false);
 	}
 	
 	/**
 	 * Logs an information message to the cloudbase.io application log
 	 * @param logLine The content of the line to be logged
 	 */
-	public void logInfo(String logLine)
-	{
-		this.log(logLine, CBLogLevel.INFO, null, null);
+	public void logInfo(String logLine) {
+		this.log(logLine, CBLogLevel.INFO, null, null, false);
 	}
 	/**
 	 * Logs an information message to the cloudbase.io application log
@@ -283,9 +282,8 @@ public class CBHelper implements CBHelperResponder {
 	 * @param category The category of the log line. This is a free text string and can be used to separate different
 	 * 	sections of the application and events
 	 */
-	public void logInfo(String logLine, String category)
-	{
-		this.log(logLine, CBLogLevel.INFO, category, null);
+	public void logInfo(String logLine, String category) {
+		this.log(logLine, CBLogLevel.INFO, category, null, false);
 	}
 	/**
 	 * Logs an information message to the cloudbase.io application log
@@ -295,18 +293,16 @@ public class CBHelper implements CBHelperResponder {
 	 * @param responder A responder to handle the return value from the cloudbase.io APIs. This is an optional parameter
 	 * 	and can be sent as null
 	 */
-	public void logInfo(String logLine, String category, CBHelperResponder responder)
-	{
-		this.log(logLine, CBLogLevel.INFO, category, responder);
+	public void logInfo(String logLine, String category, CBHelperResponder responder) {
+		this.log(logLine, CBLogLevel.INFO, category, responder, false);
 	}
 	
 	/**
 	 * Logs a debug message to the cloudbase.io application log
 	 * @param logLine The content of the line to be logged
 	 */
-	public void logDebug(String logLine)
-	{
-		this.log(logLine, CBLogLevel.DEBUG, null, null);
+	public void logDebug(String logLine) {
+		this.log(logLine, CBLogLevel.DEBUG, null, null, false);
 	}
 	/**
 	 * Logs a debug message to the cloudbase.io application log
@@ -314,9 +310,8 @@ public class CBHelper implements CBHelperResponder {
 	 * @param category The category of the log line. This is a free text string and can be used to separate different
 	 * 	sections of the application and events
 	 */
-	public void logDebug(String logLine, String category)
-	{
-		this.log(logLine, CBLogLevel.DEBUG, category, null);
+	public void logDebug(String logLine, String category) {
+		this.log(logLine, CBLogLevel.DEBUG, category, null, false);
 	}
 	/**
 	 * Logs a debug message to the cloudbase.io application log
@@ -326,9 +321,8 @@ public class CBHelper implements CBHelperResponder {
 	 * @param responder A responder to handle the return value from the cloudbase.io APIs. This is an optional parameter
 	 * 	and can be sent as null
 	 */
-	public void logDebug(String logLine, String category, CBHelperResponder responder)
-	{
-		this.log(logLine, CBLogLevel.DEBUG, category, responder);
+	public void logDebug(String logLine, String category, CBHelperResponder responder) {
+		this.log(logLine, CBLogLevel.DEBUG, category, responder, false);
 	}
 	
 	/**
@@ -339,9 +333,8 @@ public class CBHelper implements CBHelperResponder {
 	 * @param category The category of the log line. This is a free text string and can be used to separate different
 	 * 	sections of the application and events
 	 */
-	public void log(String logLine, CBLogLevel level, String category)
-	{
-		this.log(logLine, level, category, null);
+	public void log(String logLine, CBLogLevel level, String category) {
+		this.log(logLine, level, category, null, false);
 	}
 	
 	/**
@@ -353,9 +346,9 @@ public class CBHelper implements CBHelperResponder {
 	 * 	sections of the application and events
 	 * @param responder A responder to handle the return value from the cloudbase.io APIs. This is an optional parameter
 	 * 	and can be sent as null
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void log(String logLine, CBLogLevel level, String category, CBHelperResponder responder)
-	{
+	public void log(String logLine, CBLogLevel level, String category, CBHelperResponder responder, boolean shouldQueue) {
 		String url = this.getUrl() + this.appCode + "/log";
 		
 		// Create the log object
@@ -367,40 +360,25 @@ public class CBHelper implements CBHelperResponder {
 		logData.put("log_line", logLine);
 		
 		Hashtable<String, String> preparedPost = this.preparePostParams(logData, null);
-		CBHelperRequest req = new CBHelperRequest(url, "log");
-		req.setPostData(preparedPost);
 		
-		// set the responder if we have one and run give the CBHttpRequest object a Handler
-		// to be able to return data to the main UI thread
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		// Start the call in a separate thread 
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "log", null, preparedPost, null, responder, shouldQueue);
 	}
 	
 	/**
 	 * Sends cloudbase.io the name of the newly opened screen. This data is used to then generate the usage
 	 * flow analytics and show how people interact with your application
+	 * This API request will always be queued
 	 * @param screenName The unique name assigned to the opened view
 	 */
-	public void logNavigation(String screenName) 
-	{
+	public void logNavigation(String screenName) {
 		String url = this.getUrl() + this.appCode + "/lognavigation";
 		Hashtable<String, String> logData = new Hashtable<String, String>();
 		logData.put("session_id", this.sessionId);
 		logData.put("screen_name", screenName);
 		
 		Hashtable<String, String> preparedPost = this.preparePostParams(logData, null);
-		CBHelperRequest req = new CBHelperRequest(url, "log");
-		req.setPostData(preparedPost);
 		
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "log", null, preparedPost, null, null, true);
 	}
 	
 	/**
@@ -410,11 +388,11 @@ public class CBHelper implements CBHelperResponder {
 	 * The system will automatically try to serialize any object sent to this function. However, we recommend you use
 	 * the simplest possible objects to hold data if not a Map or Array directly.
 	 * Once the call to the APIs is completed the responder is called.
+	 * This API request will not be queued
 	 * @param document The object to be inserted
 	 * @param collection The name of the collection the document should be inserted into
 	 */
-	public void insertDocument(Object document, String collection)
-	{
+	public void insertDocument(Object document, String collection) {
 		insertDocument(document, collection, null, null);
 	}
 	/**
@@ -426,13 +404,58 @@ public class CBHelper implements CBHelperResponder {
 	 * Once the call to the APIs is completed the responder is called.
 	 * @param document The object to be inserted
 	 * @param collection The name of the collection the document should be inserted into
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void insertDocument(Object document, String collection, boolean shouldQueue) {
+		insertDocument(document, collection, null, null, shouldQueue);
+	}
+	/**
+	 * Inserts the given object in a cloudbase.io collection. If the collection does not exist it is automatically created.
+	 * Similarly if the data structure of the given object is different from documents already present in the collection
+	 * the structure is automatically altered to accommodate the new object.
+	 * The system will automatically try to serialize any object sent to this function. However, we recommend you use
+	 * the simplest possible objects to hold data if not a Map or Array directly.
+	 * Once the call to the APIs is completed the responder is called.
+	 * This API request will not be queued
+	 * @param document The object to be inserted
+	 * @param collection The name of the collection the document should be inserted into
 	 * @param responder The CBHelperResponder object to handle the response from the cloudbase.io APIs
 	 */
-	public void insertDocument(Object document, String collection, CBHelperResponder responder)
-	{
+	public void insertDocument(Object document, String collection, CBHelperResponder responder) {
 		insertDocument(document, collection, null, responder);
 	}
-	
+	/**
+	 * Inserts the given object in a cloudbase.io collection. If the collection does not exist it is automatically created.
+	 * Similarly if the data structure of the given object is different from documents already present in the collection
+	 * the structure is automatically altered to accommodate the new object.
+	 * The system will automatically try to serialize any object sent to this function. However, we recommend you use
+	 * the simplest possible objects to hold data if not a Map or Array directly.
+	 * Once the call to the APIs is completed the responder is called.
+	 * @param document The object to be inserted
+	 * @param collection The name of the collection the document should be inserted into
+	 * @param responder The CBHelperResponder object to handle the response from the cloudbase.io APIs
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void insertDocument(Object document, String collection, CBHelperResponder responder, boolean shouldQueue) {
+		insertDocument(document, collection, null, responder, shouldQueue);
+	}
+	/**
+	 * Inserts the given object in a cloudbase.io collection. If the collection does not exist it is automatically created.
+	 * Similarly if the data structure of the given object is different from documents already present in the collection
+	 * the structure is automatically altered to accommodate the new object.
+	 * The system will automatically try to serialize any object sent to this function. However, we recommend you use
+	 * the simplest possible objects to hold data if not a Map or Array directly.
+	 * Once the call to the APIs is completed the responder is called.
+	 * This API request will not be queued
+	 * @param document The object to be inserted
+	 * @param collection The name of the collection the document should be inserted into
+	 * @param attachments An ArrayList of of File objects to be attached to the record. File IDs will be stored in the additional column
+	 * 	<strong>cb_files</strong>
+	 * @param responder The CBHelperResponder object to handle the response from the cloudbase.io APIs
+	 */
+	public void insertDocument(Object document, String collection, ArrayList<File> attachments, CBHelperResponder responder) {
+		this.insertDocument(document, collection, attachments, responder, false);
+	}
 	@SuppressWarnings("unchecked")
 	/**
 	 * Inserts the given object in a cloudbase.io collection. If the collection does not exist it is automatically created.
@@ -446,9 +469,9 @@ public class CBHelper implements CBHelperResponder {
 	 * @param attachments An ArrayList of of File objects to be attached to the record. File IDs will be stored in the additional column
 	 * 	<strong>cb_files</strong>
 	 * @param responder The CBHelperResponder object to handle the response from the cloudbase.io APIs
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void insertDocument(Object document, String collection, ArrayList<File> attachments, CBHelperResponder responder)
-	{
+	public void insertDocument(Object document, String collection, ArrayList<File> attachments, CBHelperResponder responder, boolean shouldQueue) {
 		// We need to insert a List as the cloudbase.io APIs expect an array of objects to the
 		// insert APIs - this way we can insert multiple objects at the same time. If it is not a List
 		// then create a new List and insert the given object in it.
@@ -463,34 +486,40 @@ public class CBHelper implements CBHelperResponder {
 		
 		String url = this.getUrl() + this.appCode + "/" + collection + "/insert";
 		Hashtable<String, String> preparedPost = this.preparePostParams(finalDocument, null);
-		CBHelperRequest req = new CBHelperRequest(url, "data");
-		req.setPostData(preparedPost);
 		
-		// set the responder if we have one and run give the CBHttpRequest object a Handler
-		// to be able to return data to the main UI thread
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		// if we have File attachments then add them to the request
-		if (attachments != null)
-			req.setFiles(attachments);
-		
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "data", null, preparedPost, attachments, responder, shouldQueue);
 	}
 	
 	/**
 	 * Returns all of the documents in the given collection
+	 * This API request will not be queued
 	 * @param collection The name of the collection to run the search over
 	 * @param responder The CBHelperResponder object to manage the data returned from the cloudbase.io APIs
 	 */
 	public void searchDocument(String collection, CBHelperResponder responder) {
 		this.searchDocument(collection, null, responder);
 	}
-	
+	/**
+	 * Returns all of the documents in the given collection
+	 * @param collection The name of the collection to run the search over
+	 * @param responder The CBHelperResponder object to manage the data returned from the cloudbase.io APIs
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void searchDocument(String collection, CBHelperResponder responder, boolean shouldQueue) {
+		this.searchDocument(collection, null, responder, shouldQueue);
+	}
+	/**
+	 * Runs a search over a collection with the given criteria. The documents matching the search criteria are then
+	 * returned to the given responder object
+	 * This API request will not be queued
+	 * @param collection The name of the collection to run the search over
+	 * @param cond A CBSearchCondition object containing the criteria for this search. This object can be null, in which case
+	 * 	all of the documents in the collection will be returned
+	 * @param responder The CBHelperResponder object to manage the data returned from the cloudbase.io APIs
+	 */
+	public void searchDocument(String collection, CBSearchCondition cond, CBHelperResponder responder) {
+		this.searchDocument(collection, cond, responder, false);
+	}
 	/**
 	 * Runs a search over a collection with the given criteria. The documents matching the search criteria are then
 	 * returned to the given responder object
@@ -498,9 +527,10 @@ public class CBHelper implements CBHelperResponder {
 	 * @param cond A CBSearchCondition object containing the criteria for this search. This object can be null, in which case
 	 * 	all of the documents in the collection will be returned
 	 * @param responder The CBHelperResponder object to manage the data returned from the cloudbase.io APIs
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
 	@SuppressWarnings("rawtypes")
-	public void searchDocument(String collection, CBSearchCondition cond, CBHelperResponder responder) {
+	public void searchDocument(String collection, CBSearchCondition cond, CBHelperResponder responder, boolean shouldQueue) {
 		
 		// if we have no conditions for the request then send an empty Map - the cloudbase.io APIs
 		// will then return all of the objects in the collection
@@ -514,27 +544,27 @@ public class CBHelper implements CBHelperResponder {
 	    String url = this.getUrl() + this.appCode + "/" + collection + "/search";
 	    
 	    Hashtable<String, String> preparedPost = this.preparePostParams(serializedConditions, null);
-		CBHelperRequest req = new CBHelperRequest(url, "data");
-		req.setPostData(preparedPost);
-		// set the responder if we have one and run give the CBHttpRequest object a Handler
-		// to be able to return data to the main UI thread
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		Thread t = new Thread(req);
-        t.start();
+	    
+	    this.startRequest(url, "data", null, preparedPost, null, responder, shouldQueue);
 	}
-	
 	/**
 	 * Runs a search over a collection and applies the given list of aggregation commands to the output.
+	 * This API request will not be queued
 	 * @param collection The name of the collection to run the search over
 	 * @param aggregateConditions A List of CBDataAggregationCommand objects
 	 * @param handler a block of code to be executed once the request is completed
 	 */
 	public void searchDocumentAggregate(String collection, List<CBDataAggregationCommand> aggregateConditions, CBHelperResponder responder) {
+		this.searchDocumentAggregate(collection, aggregateConditions, responder, false);
+	}
+	/**
+	 * Runs a search over a collection and applies the given list of aggregation commands to the output.
+	 * @param collection The name of the collection to run the search over
+	 * @param aggregateConditions A List of CBDataAggregationCommand objects
+	 * @param handler a block of code to be executed once the request is completed
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void searchDocumentAggregate(String collection, List<CBDataAggregationCommand> aggregateConditions, CBHelperResponder responder, boolean shouldQueue) {
 		List<Map<String, Object>> serializedAggregateConditions = new ArrayList<Map<String, Object>>();
 		
 		for (CBDataAggregationCommand curComm : aggregateConditions) {
@@ -550,50 +580,39 @@ public class CBHelper implements CBHelperResponder {
 		paramsToPrepare.put("cb_aggregate_key", serializedAggregateConditions);
 		
 	    Hashtable<String, String> preparedPost = this.preparePostParams(paramsToPrepare, null);
-		CBHelperRequest req = new CBHelperRequest(url, "data");
-		req.setPostData(preparedPost);
-		// set the responder if we have one and run give the CBHttpRequest object a Handler
-		// to be able to return data to the main UI thread
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		Thread t = new Thread(req);
-        t.start();
+	    
+	    this.startRequest(url, "data", null, preparedPost, null, responder, shouldQueue);
 	}
-	
+	/**
+	 * Downloads a file matching the given file id. The file id comes from the cloudbase.io cb_files field on collections
+	 * created when documents are inserted with file attachments.
+	 * The data is downloaded and a java.io.File object is made available in the CBHelperResponse class called downloadedFile
+	 * This API request will not be queued 
+	 * @param fileId the cloudbase.io generated file id
+	 * @param responder The object to handle the response object 
+	 */
+	public void downloadFile(String fileId, CBHelperResponder responder) {
+		this.downloadFile(fileId, responder, false);
+	}
 	/**
 	 * Downloads a file matching the given file id. The file id comes from the cloudbase.io cb_files field on collections
 	 * created when documents are inserted with file attachments.
 	 * The data is downloaded and a java.io.File object is made available in the CBHelperResponse class called downloadedFile 
 	 * @param fileId the cloudbase.io generated file id
 	 * @param responder The object to handle the response object 
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void downloadFile(String fileId, CBHelperResponder responder) {
+	public void downloadFile(String fileId, CBHelperResponder responder, boolean shouldQueue) {
 		String url = this.getUrl() + this.appCode + "/file/" + fileId;
 		Hashtable<String, String> preparedPost = this.preparePostParams(null, null);
-		CBHelperRequest req = new CBHelperRequest(url, "download");
-		req.setPostData(preparedPost);
-		req.setFileId(fileId);
-		// for file downloads we need to send the application's temporary file path.
-		req.setTemporaryFilePath(this.getTemporaryFilesPath());
-		// set the responder if we have one and run give the CBHttpRequest object a Handler
-		// to be able to return data to the main UI thread
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
 		
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "download", fileId, preparedPost, null, responder, shouldQueue);
 	}
 	
 	/**
 	 * Subscribes the current device, with the Key received from Google's C2DM to a notification channel. By default all 
 	 * devices are automatically subscribed to the "All" channel.
+	 * This API request will not be queued
 	 * @param deviceKey The registration id received from the Google's C2DM 
 	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
 	 * 	created
@@ -601,15 +620,26 @@ public class CBHelper implements CBHelperResponder {
 	public void notificationSubscribeDevice(String deviceKey, String channel) {
 		notificationSubscribeDevice(deviceKey, channel, null);
 	}
-	
+	/**
+	 * Subscribes the current device, with the Key received from Google's C2DM to a notification channel. By default all 
+	 * devices are automatically subscribed to the "All" channel.
+	 * This API request will not be queued
+	 * @param deviceKey deviceKey The registration id received from the Google's C2DM 
+	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
+	 * @param responder A CBHelperResponder object to handle the response from the cloudbase.io APIs
+	 */
+	public void notificationSubscribeDevice(String deviceKey, String channel, CBHelperResponder responder) {
+		this.notificationSubscribeDevice(deviceKey, channel, responder, false);
+	}
 	/**
 	 * Subscribes the current device, with the Key received from Google's C2DM to a notification channel. By default all 
 	 * devices are automatically subscribed to the "All" channel.
 	 * @param deviceKey deviceKey The registration id received from the Google's C2DM 
 	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
 	 * @param responder A CBHelperResponder object to handle the response from the cloudbase.io APIs
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void notificationSubscribeDevice(String deviceKey, String channel, CBHelperResponder responder) {
+	public void notificationSubscribeDevice(String deviceKey, String channel, CBHelperResponder responder, boolean shouldQueue) {
 		Map<String, String> subForm = new HashMap<String, String>();
 		
 		subForm.put("action", "subscribe");
@@ -620,34 +650,37 @@ public class CBHelper implements CBHelperResponder {
 		String url = this.getUrl() + this.appCode + "/notifications-register";
 	    
 		Hashtable<String, String> preparedPost = this.preparePostParams(subForm, null);
-		CBHelperRequest req = new CBHelperRequest(url, "notifications-register");
-		req.setPostData(preparedPost);
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
 		
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "notifications-register", null, preparedPost, null, responder, shouldQueue);
 	}
 	
 	/**
 	 * Unsubscribes the current device from the given notification channel
+	 * This API request will not be queued
 	 * @param deviceKey deviceKey The registration id received from the Google's C2DM
 	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
 	 */
 	public void notificationUnsubscribeDevice(String deviceKey, String channel) {
 		notificationUnsubscribeDevice(deviceKey, channel, null);
 	}
-	
 	/**
 	 * Unsubscribes the current device from the given notification channel
+	 * This API request will not be queued
 	 * @param deviceKey deviceKey The registration id received from the Google's C2DM
 	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
 	 * @param responder A CBHelperResponder object to handle the response from the cloudbase.io server
 	 */
 	public void notificationUnsubscribeDevice(String deviceKey, String channel, CBHelperResponder responder) {
+		this.notificationUnsubscribeDevice(deviceKey, channel, responder, false);
+	}
+	/**
+	 * Unsubscribes the current device from the given notification channel
+	 * @param deviceKey deviceKey The registration id received from the Google's C2DM
+	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
+	 * @param responder A CBHelperResponder object to handle the response from the cloudbase.io server
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void notificationUnsubscribeDevice(String deviceKey, String channel, CBHelperResponder responder, boolean shouldQueue) {
 		Map<String, String> subForm = new HashMap<String, String>();
 		
 		subForm.put("action", "unsubscribe");
@@ -658,16 +691,7 @@ public class CBHelper implements CBHelperResponder {
 		String url = this.getUrl() + this.appCode + "/notifications-register";
 	    
 		Hashtable<String, String> preparedPost = this.preparePostParams(subForm, null);
-		CBHelperRequest req = new CBHelperRequest(url, "notifications-register");
-		req.setPostData(preparedPost);
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "notifications-register", null, preparedPost, null, responder, shouldQueue);
 	}
 	
 	/**
@@ -675,21 +699,22 @@ public class CBHelper implements CBHelperResponder {
 	 * Device notifications must be enabled in the application configuration on cloudbase.io for this to work.
 	 * @param notificationText The content of the notification text
 	 * @param channels An ArrayList of channel names (String) to be notified
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void sendNotification(String notificationText, ArrayList<String> channels) {
+	public void sendNotification(String notificationText, ArrayList<String> channels, boolean shouldQueue) {
 		for (String channel : channels) {
-			sendNotification(notificationText, channel);
+			sendNotification(notificationText, channel, shouldQueue);
 		}
 	}
 	
 	/**
 	 * Pushes a notification to the given channel. If channel is null then the default "All" channel will be used<br/><br/>
 	 * Device notifications must be enabled in the application configuration on cloudbase.io for this to work.
-	 * @param notificationText
-	 * @param channel
+	 * @param notificationText The full text for the notification
+	 * @param channel The channel this notification should be sent to
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void sendNotification(String notificationText, String channel)
-	{
+	public void sendNotification(String notificationText, String channel, boolean shouldQueue) {
 		Map<String, String> subForm = new HashMap<String, String>();
 	    
 		subForm.put("channel", channel);
@@ -701,21 +726,30 @@ public class CBHelper implements CBHelperResponder {
 	    String url = this.getUrl() + this.appCode + "/notifications";
 	    
 	    Hashtable<String, String> preparedPost = this.preparePostParams(subForm, null);
-		CBHelperRequest req = new CBHelperRequest(url, "notifications");
-		req.setPostData(preparedPost);
-		
-		Thread t = new Thread(req);
-        t.start();
+	    
+	    this.startRequest(url, "notifications", null, preparedPost, null, null, shouldQueue);
 	}
 	
 	/**
 	 * Sends an email to the specified recipient using the given template.
+	 * This API request will not be queued
 	 * @param templateCode The code of the template created in the control panel on cloudbase.io
 	 * @param recipient The email address of the recipient of the email
 	 * @param subject The subject of the email
 	 * @param vars A Map of variables to fill the template.
 	 */
 	public void sendEmail(String templateCode, String recipient, String subject, Map<String, String> vars) {
+		this.sendEmail(templateCode, recipient, subject, vars, false);
+	}
+	/**
+	 * Sends an email to the specified recipient using the given template.
+	 * @param templateCode The code of the template created in the control panel on cloudbase.io
+	 * @param recipient The email address of the recipient of the email
+	 * @param subject The subject of the email
+	 * @param vars A Map of variables to fill the template.
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void sendEmail(String templateCode, String recipient, String subject, Map<String, String> vars, boolean shouldQueue) {
 		Map<String, String> subForm = new HashMap<String, String>();
 	    
 		subForm.put("template_code", templateCode);
@@ -726,15 +760,13 @@ public class CBHelper implements CBHelperResponder {
 	    String url = this.getUrl() + this.appCode + "/email";
 	    
 	    Hashtable<String, String> preparedPost = this.preparePostParams(subForm, null);
-		CBHelperRequest req = new CBHelperRequest(url, "email");
-		req.setPostData(preparedPost);
-		
-		Thread t = new Thread(req);
-        t.start();
+	    
+	    this.startRequest(url, "email", null, preparedPost, null, null, shouldQueue);
 	}
 	
 	/**
 	 * Executes a CloudFunction on the cloudbase.io servers on demand. Results will be ignored.
+	 * This API request will not be queued
 	 * @param functionCode The name of the function to be executed
 	 */
 	public void runCloudFunction(String functionCode) {
@@ -744,6 +776,7 @@ public class CBHelper implements CBHelperResponder {
 	/**
 	 * Executes a CloudFunction on the coudbase.io servers on demand. The additional parameters will be accessible
 	 * to the function like standard HTTP POST parameters. Results will be ignored.
+	 * This API request will not be queued
 	 * @param functionCode The name of the function to be executed
 	 * @param params The list of parameters to be passed to the function
 	 */
@@ -754,57 +787,77 @@ public class CBHelper implements CBHelperResponder {
 	/**
 	 * Executes a CloudFunction on the coudbase.io servers on demand. The additional parameters will be accessible
 	 * to the function like standard HTTP POST parameters. Results and output are parsed and handed to the responder.
+	 * This API request will not be queued
 	 * @param functionCode The name of the function to be executed
 	 * @param params The list of parameters to be passed to the function
 	 * @param responder The CBHelperResponder to handle the response value
 	 */
 	public void runCloudFunction(String functionCode, Map<String, String> params, CBHelperResponder responder) {
+		this.runCloudFunction(functionCode, params, responder, false);
+	}
+	/**
+	 * Executes a CloudFunction on the coudbase.io servers on demand. The additional parameters will be accessible
+	 * to the function like standard HTTP POST parameters. Results and output are parsed and handed to the responder.
+	 * @param functionCode The name of the function to be executed
+	 * @param params The list of parameters to be passed to the function
+	 * @param responder The CBHelperResponder to handle the response value
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void runCloudFunction(String functionCode, Map<String, String> params, CBHelperResponder responder, boolean shouldQueue) {
 		String url = this.getUrl() + this.appCode + "/cloudfunction/" + functionCode;
 		
 	    Hashtable<String, String> preparedPost = this.preparePostParams(Collections.EMPTY_MAP, params);
-		CBHelperRequest req = new CBHelperRequest(url, "cloudfunction");
-		req.setPostData(preparedPost);
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		Thread t = new Thread(req);
-        t.start();
+	    
+	    this.startRequest(url, "cloudfunction", null, preparedPost, null, responder, shouldQueue);
 	}
 	
+	/**
+	 * Executes of the cloudbase.io applets on demand.
+	 * Results and output are parsed and handed to the responder.
+	 * This API request will not be queued
+	 * @param appletCode The name of the applet to be executed
+	 * @param params The list of parameters to be passed to the applet
+	 * @param responder The CBHelperResponder to handle the response value
+	 */
+	public void runApplet(String appletCode, Map<String, String> params, CBHelperResponder responder) {
+		this.runApplet(appletCode, params, responder, false);
+	}
 	/**
 	 * Executes of the cloudbase.io applets on demand.
 	 * Results and output are parsed and handed to the responder.
 	 * @param appletCode The name of the applet to be executed
 	 * @param params The list of parameters to be passed to the applet
 	 * @param responder The CBHelperResponder to handle the response value
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void runApplet(String appletCode, Map<String, String> params, CBHelperResponder responder) {
+	public void runApplet(String appletCode, Map<String, String> params, CBHelperResponder responder, boolean shouldQueue) {
 		String url = this.getUrl() + this.appCode + "/applet/" + appletCode;
 		
 	    Hashtable<String, String> preparedPost = this.preparePostParams(Collections.EMPTY_MAP, params);
-		CBHelperRequest req = new CBHelperRequest(url, "applet");
-		req.setPostData(preparedPost);
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		Thread t = new Thread(req);
-        t.start();
+	    
+	    this.startRequest(url, "applet", null, preparedPost, null, responder, shouldQueue);
 	}
 	
+	/**
+	 * Initiates a transaction with PayPal by sending the payment details and retrieving a token
+	 * and an express checkout url. The url returned should be then opened in a browser window.
+	 * This API request will not be queued
+	 * @param purchaseDetails a populated CBPayPalBill object
+	 * @param isLiveEnvironment whether we are using the production or sandbox paypal environments
+	 * @param responder a responder to handle the returned PayPal token and submission url
+	 */
+	public void preparePayPalPurchase(CBPayPalBill purchaseDetails, boolean isLiveEnvironment, CBHelperResponder responder) {
+		this.preparePayPalPurchase(purchaseDetails, isLiveEnvironment, responder, false);
+	}
 	/**
 	 * Initiates a transaction with PayPal by sending the payment details and retrieving a token
 	 * and an express checkout url. The url returned should be then opened in a browser window.
 	 * @param purchaseDetails a populated CBPayPalBill object
 	 * @param isLiveEnvironment whether we are using the production or sandbox paypal environments
 	 * @param responder a responder to handle the returned PayPal token and submission url
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void preparePayPalPurchase(CBPayPalBill purchaseDetails, boolean isLiveEnvironment, CBHelperResponder responder) {
+	public void preparePayPalPurchase(CBPayPalBill purchaseDetails, boolean isLiveEnvironment, CBHelperResponder responder, boolean shouldQueue) {
 		String url = this.getUrl() + this.appCode + "/paypal/prepare";
 		
 		Hashtable<String, Object> postData = new Hashtable<String, Object>();
@@ -823,45 +876,49 @@ public class CBHelper implements CBHelperResponder {
 		
 		Hashtable<String, String> preparedPost = this.preparePostParams(postData, null);
 		
-		CBHelperRequest req = new CBHelperRequest(url, "paypal");
-		req.setPostData(preparedPost);
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "paypal", null, preparedPost, null, responder, shouldQueue);
 	}
 	
+	/**
+	 * Once the PayPal purchase is completed this method updates the record in the cloudbase.io database.
+	 * The responder can then proceed to close the payment window using the output of the call.
+	 * This API request will not be queued
+	 * @param url The url returned by PayPal once the payment is completed
+	 * @param responder The responder to complete the payment in the application
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void completePayPalPurchase(String url, CBHelperResponder responder) {
+		this.completePayPalPurchase(url, responder, false);
+	}
 	/**
 	 * Once the PayPal purchase is completed this method updates the record in the cloudbase.io database.
 	 * The responder can then proceed to close the payment window using the output of the call
 	 * @param url The url returned by PayPal once the payment is completed
 	 * @param responder The responder to complete the payment in the application
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void completePayPalPurchase(String url, CBHelperResponder responder) {
+	public void completePayPalPurchase(String url, CBHelperResponder responder, boolean shouldQueue) {
 		Hashtable<String, String> preparedPost = this.preparePostParams(new Hashtable<String, String>(), null);
 		
-		CBHelperRequest req = new CBHelperRequest(url, "paypal");
-		req.setPostData(preparedPost);
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "paypal", null, preparedPost, null, responder, shouldQueue);
 	}
 	
 	/**
 	 * Returns all of the details of a payment which has been prepared.
+	 * This API request will not be queued
 	 * @param paymentId The payment_id returned by the cloudbase.io APIs when the payment is prepared
 	 * @param responder A responder to handle the details
 	 */
 	public void getPayPalPaymentDetails(String paymentId, CBHelperResponder responder) {
+		this.getPayPalPaymentDetails(paymentId, responder, false);
+	}
+	/**
+	 * Returns all of the details of a payment which has been prepared.
+	 * @param paymentId The payment_id returned by the cloudbase.io APIs when the payment is prepared
+	 * @param responder A responder to handle the details
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void getPayPalPaymentDetails(String paymentId, CBHelperResponder responder, boolean shouldQueue) {
 		String url = this.getUrl() + this.appCode + "/paypal/payment-details";
 		
 		Hashtable<String, Object> postData = new Hashtable<String, Object>();
@@ -869,16 +926,7 @@ public class CBHelper implements CBHelperResponder {
 		
 		Hashtable<String, String> preparedPost = this.preparePostParams(postData, null);
 		
-		CBHelperRequest req = new CBHelperRequest(url, "paypal");
-		req.setPostData(preparedPost);
-		if (responder != null) {
-			req.setResponder(responder);
-			Handler handler = new Handler();
-			req.setmHandler(handler);
-		}
-		
-		Thread t = new Thread(req);
-        t.start();
+		this.startRequest(url, "paypal", null, preparedPost, null, responder, shouldQueue);
 	}
 	
 	// this function is used only by the helper class and it registers the device
@@ -897,6 +945,10 @@ public class CBHelper implements CBHelperResponder {
 	    
 	    String url = this.getUrl() + this.appCode + "/register";
 	    Hashtable<String, String> preparedPost = this.preparePostParams(device, null);
+	    
+	    this.startRequest(url, "register-device", null, preparedPost, null, this, true);
+	    
+	    /*
 	    CBHelperRequest req = new CBHelperRequest(url, "register-device");
 		req.setPostData(preparedPost);
 		req.setResponder(this);
@@ -904,6 +956,168 @@ public class CBHelper implements CBHelperResponder {
 		req.setmHandler(handler);
 		Thread t = new Thread(req);
         t.start();
+        */
+	}
+	
+	/**
+	 * Starts a request to the cloudbase.io APIs and passes on all of the parameters. Also handles the queueing
+	 * of requests
+	 * @param url The API url to be called
+	 * @param function The cloudbase.io function code
+	 * @param postParams The prepared Hashtable of post parameters
+	 * @param responder A responder ogject if available
+	 */
+	private void startRequest(String url, String function, String fileId, Hashtable<String, String> postParams, ArrayList<File> attachments, CBHelperResponder responder, boolean shouldQueue) {
+		
+		// if connectivity is available and we have a queue of requests then start it now
+		if (this.isNetworkAvailable() && this.getQueueSize() > 0 && !this.isQueueLocked()) {
+			this.createQueueLock();
+			CBQueuedRequestSender sender = new CBQueuedRequestSender(this.getQueue(), this);
+			
+			Thread senderThread = new Thread(sender);
+			senderThread.start();
+		}
+		
+		CBQueuedRequest queueRequest = new CBQueuedRequest();
+		queueRequest.setUrl(url);
+		queueRequest.setCloudbaseFunction(function);
+		queueRequest.setParameters(postParams);
+		if (attachments != null)
+			queueRequest.setFiles(attachments);
+		if (fileId != null)
+			queueRequest.setFileId(fileId);
+		
+		String queueFileName = "";
+		
+		CBHelperRequest req = new CBHelperRequest(queueRequest, this);
+		if (responder != null) {
+			req.setResponder(responder);
+			Handler handler = new Handler();
+			req.setmHandler(handler);
+		}
+		
+		if (shouldQueue) {
+			queueFileName = this.queueRequest(queueRequest);
+			req.setQueueFileName(queueFileName);
+		}
+		
+		req.setTemporaryFilePath(this.getTemporaryFilesPath());
+		
+		if (this.isNetworkAvailable()) {
+			Thread t = new Thread(req);
+	        t.start();
+		}
+	}
+	
+	private String queueRequest(CBQueuedRequest request) {
+		try {
+			String queuePath = this.getQueueFolder();
+			if (this.debugMode)
+				Log.i(logTag, "using queue folder: " + queuePath);
+			
+			String queueFileName = queuePath + File.separator + "cb_queue_" + this.getQueueSize();
+			
+			FileOutputStream fos = new FileOutputStream(queueFileName, true);//this.applicationActivity.openFileOutput(queueFileName, Context.MODE_PRIVATE);
+			ObjectOutputStream os = new ObjectOutputStream(fos);
+			os.writeObject(request);
+			os.close();
+			
+			if (this.debugMode)
+				Log.i(logTag, "Saved queue object to " + queueFileName);
+			
+			return queueFileName;
+		} catch (Exception e) {
+			Log.e(logTag, "Error while saving queued request", e);
+			return null;
+		}
+	}
+	
+	private void createQueueLock() {
+		try {
+			FileOutputStream fos = new FileOutputStream(this.getQueueLockFile(), true);
+			fos.write("lock".getBytes());
+			fos.close();
+		} catch (Exception e) {
+			Log.e(logTag, "Error while creating queue lock file", e);
+		}
+	}
+	
+	public void removeQueueLock() {
+		File lockFile = new File(this.getQueueLockFile());
+		if (lockFile.exists())
+			lockFile.delete();
+	}
+	
+	public boolean isQueueLocked() {
+		File lockFile = new File(this.getQueueLockFile());
+		return lockFile.exists();
+	}
+	
+	public void removeQueuedRequest(String fileName) {
+		try {
+			File queueFile = new File(fileName);
+			if (queueFile.exists() && queueFile.isFile()) {
+				queueFile.delete();
+				if (this.debugMode)
+					Log.i(logTag, "removed queue file " + fileName);
+			} else {
+				if (this.debugMode)
+					Log.e(logTag, "Could not find queue file " + fileName);
+			}
+		} catch (Exception e) {
+			Log.e(logTag, "Error while removing queue file " + fileName, e);
+		}
+	}
+	
+	private int getQueueSize() {
+		File queueFolder = new File(this.getQueueFolder() + File.separator);
+		int size = 0;
+		//return queueFolder.listFiles().length;
+		for (File curFile : queueFolder.listFiles()) {
+			if (curFile.getAbsolutePath().equals(this.getQueueLockFile()))
+				continue;
+			
+			size++;
+		}
+		
+		return size;
+	}
+	
+	private ArrayList<String> getQueue() {
+		ArrayList<String> queue = new ArrayList<String>();
+		File queueFolder = new File(this.getQueueFolder() + File.separator);
+		
+		for (File curQueueFile : queueFolder.listFiles()) {
+			queue.add(curQueueFile.getAbsolutePath());
+		}
+		
+		return queue;
+	}
+	
+	public void flushQueue() {
+		File queueFolder = new File(this.getQueueFolder() + File.separator);
+		
+		for (File curQueueFile : queueFolder.listFiles()) {
+			if (!curQueueFile.getAbsolutePath().equals(this.getQueueLockFile()))
+				this.removeQueuedRequest(curQueueFile.getAbsolutePath());
+		}
+	}
+	
+	private String getQueueFolder() {
+		String queueFolder = this.applicationActivity.getCacheDir().getAbsolutePath() + File.separator + "cb_queue";
+		File queueFolderFile = new File(queueFolder);
+		if (!queueFolderFile.exists()) {
+			queueFolderFile.mkdirs();
+		}
+		queueFolderFile = null;
+		return queueFolder;
+	}
+	
+	private String getQueueLockFile() {
+		String queueFolder = this.applicationActivity.getCacheDir().getAbsolutePath() + File.pathSeparator + "cb_queue";
+		queueFolder += File.separator + "cb_queue_lock";
+		
+		return queueFolder;
 	}
 	
 	// This function prepares a request for the cloudbase.io APIs adding all the default
@@ -977,6 +1191,13 @@ public class CBHelper implements CBHelperResponder {
 		this.registerDevice();
 		this.deviceRegistered = true;
 	}
+	
+	private boolean isNetworkAvailable() {
+	    ConnectivityManager connectivityManager 
+	          = (ConnectivityManager) this.applicationActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
+	    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+	    return activeNetworkInfo != null;
+	}
 
 	public boolean isHttps() {
 		return https;
@@ -1025,11 +1246,43 @@ public class CBHelper implements CBHelperResponder {
 	public void setCurrentLocation(Location currentLocation) {
 		this.currentLocation = currentLocation;
 	}
+	
+	public String getTemporaryFilesPath() {
+		return temporaryFilesPath;
+	}
 
+	public void setTemporaryFilesPath(String temporaryFilesPath) {
+		this.temporaryFilesPath = temporaryFilesPath;
+	}
+
+	public boolean isDebugMode() {
+		return debugMode;
+	}
+	/**
+	 * If the object is set in debug mode then additional logging messages
+	 * will be printed in the Android category log using the CBHELPER tag
+	 * @param debugMode true if the object should run in debug mode
+	 */
+	public void setDebugMode(boolean debugMode) {
+		this.debugMode = debugMode;
+	}
+
+	public CBHelperResponder getDefaultQueueResponder() {
+		return defaultQueueResponder;
+	}
+	/**
+	 * Sets the default CBHelperResponder object to receive messages from API
+	 * requests queued because internet connectivity wasn't available.
+	 * @param defaultQueueResponder A CBHelperResponder object
+	 */
+	public void setDefaultQueueResponder(CBHelperResponder defaultQueueResponder) {
+		this.defaultQueueResponder = defaultQueueResponder;
+	}
+	
 	// This is the response handler for the registerDevice method. Read the session_id
 	// from cloudbase and save it in the CBHelper global variable
 	@SuppressWarnings("unchecked")
-	public void handleResponse(CBHelperResponse res) {
+	public void handleResponse(CBQueuedRequest req, CBHelperResponse res) {
 		if (res.getFunction().equals("register-device")) {
 			Map<String, Object> map = (Map<String, Object>)res.getData();
 			if (map.containsKey("sessionid"))
@@ -1038,12 +1291,5 @@ public class CBHelper implements CBHelperResponder {
 		}
 	}
 
-	public String getTemporaryFilesPath() {
-		return temporaryFilesPath;
-	}
-
-	public void setTemporaryFilesPath(String temporaryFilesPath) {
-		this.temporaryFilesPath = temporaryFilesPath;
-	}
-	
 }
+

@@ -31,6 +31,7 @@ public class CBHelperResponse {
 	private File downloadedFile;
 	private Object data;
 	private boolean success;
+	private int httpStatus;
 	
 	public String getErrorMessage() {
 		return errorMessage;
@@ -79,5 +80,11 @@ public class CBHelperResponse {
 	}
 	public void setResponseDataString(String responseDataString) {
 		this.responseDataString = responseDataString;
+	}
+	public int getHttpStatus() {
+		return httpStatus;
+	}
+	public void setHttpStatus(int httpStatus) {
+		this.httpStatus = httpStatus;
 	}
 }

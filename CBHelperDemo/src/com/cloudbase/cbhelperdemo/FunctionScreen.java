@@ -24,6 +24,7 @@ import com.cloudbase.CBHelperResponder;
 import com.cloudbase.CBHelperResponse;
 import com.cloudbase.CBPayPalBill;
 import com.cloudbase.CBPayPalBillItem;
+import com.cloudbase.CBQueuedRequest;
 
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -104,7 +105,7 @@ public class FunctionScreen extends Fragment implements OnClickListener, CBHelpe
     }
 	
 	@Override
-	public void handleResponse(CBHelperResponse res) {
+	public void handleResponse(CBQueuedRequest req, CBHelperResponse res) {
 		if (res.getFunction().equals("applet")) { // we have called the twitter applet. parse and print the Alert
 			if (res.getData() instanceof Map) {
 				@SuppressWarnings("unchecked") 

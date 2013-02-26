@@ -75,6 +75,9 @@ public class LogScreen extends Fragment implements OnClickListener  {
 		MainActivity.helper.log(
 				logLineText.getText().toString(), 
 				CBLogLevel.valueOf(logSeverityString), 
-				logCategory.getText().toString());
+				logCategory.getText().toString(),
+				null, // no responder but we want to queue the call
+				true);
+		
     } 
 }

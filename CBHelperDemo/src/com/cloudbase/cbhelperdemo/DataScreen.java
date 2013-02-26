@@ -18,6 +18,7 @@ package com.cloudbase.cbhelperdemo;
 
 import com.cloudbase.CBHelperResponder;
 import com.cloudbase.CBHelperResponse;
+import com.cloudbase.CBQueuedRequest;
 import com.cloudbase.datacommands.*;
 
 import android.app.Activity;
@@ -77,7 +78,7 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 		if (v.getId() == R.id.insertButton) {
 			TestDataObject obj = this.createObject();
 			// use the shared object and send an insert to the basic data object
-			MainActivity.helper.insertDocument(obj, "android_demo_collection");
+			MainActivity.helper.insertDocument(obj, "android_demo_collection", true);
 		}
 		
 		if (v.getId() == R.id.insertFileButton) {
@@ -157,7 +158,7 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public void handleResponse(CBHelperResponse res) {
+	public void handleResponse(CBQueuedRequest req, CBHelperResponse res) {
 		// we are downloading a file
 		if (res.getFunction().equals("download")) {
 			if (res.getDownloadedFile() != null) {

@@ -25,8 +25,7 @@ import java.util.List;
 import org.apache.http.entity.AbstractHttpEntity;
 
 public class CBMultipartEntity extends AbstractHttpEntity implements Cloneable {
-    
-    /* package */ static final String CRLF = "\r\n";    //$NON-NLS-1$
+	/* package */ static final String CRLF = "\r\n";    //$NON-NLS-1$
     
     private List<CBPart> parts = new ArrayList<CBPart>();
     
