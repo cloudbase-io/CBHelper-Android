@@ -258,6 +258,10 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 	            case CBOperatorNe:
 	            case CBOperatorIn:
 	            case CBOperatorNin:
+	            case CBOperatorBigger:
+	            case CBOperatorBiggerOrEqual:
+	            case CBOperatorLess:
+	            case CBOperatorLessOrEqual:
 	            case CBOperatorSize:
 	            case CBOperatorType:
 	            	cond.put(conditionsGroup.getOperator().toString(), conditionsGroup.getValue().toString());
