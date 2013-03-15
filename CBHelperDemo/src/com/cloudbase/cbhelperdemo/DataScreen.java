@@ -220,5 +220,6 @@ public class DataScreen extends Fragment implements OnClickListener, CBHelperRes
 				Log.d("DEMOAPP", "Data not array: " + res.getData().getClass().toString());
 			}
 		}
+		
 	}
 }

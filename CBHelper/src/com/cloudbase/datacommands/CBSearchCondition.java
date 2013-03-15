@@ -16,8 +16,10 @@
  */
 package com.cloudbase.datacommands;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -76,18 +78,21 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 	 * @param nearLoc The location we are looking for
 	 * @param maxDistance The maximum distance in meters from the given location
 	 */
-	public CBSearchCondition(Location nearLoc, int maxDistance) {
+	public CBSearchCondition(Location nearLoc, double maxDistance) {
 		List<Double> points = new ArrayList<Double>();
-        points.add(Double.valueOf(nearLoc.getLatitude()));
-        points.add(Double.valueOf(nearLoc.getLongitude()));
+		DecimalFormat twoDForm = new DecimalFormat("#.####");
+        points.add(Double.valueOf(twoDForm.format(nearLoc.getLatitude())).doubleValue());
+        points.add(Double.valueOf(twoDForm.format(nearLoc.getLongitude())).doubleValue());
         
-        Map<String, Object> searchQuery = new HashMap<String, Object>(); 
+        Map<String, Object> searchQuery = new LinkedHashMap<String, Object>(); 
         this.setField("cb_location");
         this.setOperator(CBSearchConditionOperator.CBOperatorEqual);
         
         searchQuery.put("$near", points);
-        if (maxDistance > 0)
-        	searchQuery.put("$maxDistance", Integer.valueOf(maxDistance));
+        if (maxDistance > 0) {
+        	int distance = (int)(maxDistance/1000/111.12);
+        	searchQuery.put("$maxDistance", Integer.valueOf(distance).intValue());
+        }
 
         this.setValue(searchQuery);
         this.limit = -1;
@@ -251,7 +256,7 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 	    	List modArray = new ArrayList();
 	        switch (conditionsGroup.getOperator()) {
 	            case CBOperatorEqual:
-	                output.put(conditionsGroup.getField(), conditionsGroup.value.toString());//[output setValue:conditionsGroup.value forKey:conditionsGroup.field];
+	                output.put(conditionsGroup.getField(), conditionsGroup.value);
 	                break;
 	            case CBOperatorAll:
 	            case CBOperatorExists:
