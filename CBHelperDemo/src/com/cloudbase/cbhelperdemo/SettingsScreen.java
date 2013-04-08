@@ -38,7 +38,7 @@ public class SettingsScreen extends Fragment implements OnClickListener {
 	private static String appCode_ = "";
 	private static String appUniq_ = "";
 	private static String appPwd_ = "";
-	private static String c2dmEmail_ = "";
+	private static String gcmProjectId_ = "";
 	
 	private static SharedPreferences settings;
 	private static SharedPreferences.Editor editor;
@@ -91,14 +91,14 @@ public class SettingsScreen extends Fragment implements OnClickListener {
 			appCode_ = settings.getString("app_code", "");
 			appUniq_ = settings.getString("app_uniq", "");
 			appPwd_ = settings.getString("app_pwd", "");
-			c2dmEmail_ = settings.getString("c2dm_email", "");
+			gcmProjectId_ = settings.getString("c2dm_email", "");
 			
 			TextView appText = (TextView)this.getView().findViewById(R.id.appCodeText);
 			appText.setText(appCode_);
 			TextView appUniqText = (TextView)this.getView().findViewById(R.id.appUniqText);
 			appUniqText.setText(appUniq_);
 			TextView c2dmText = (TextView)this.getView().findViewById(R.id.c2dmText);
-			c2dmText.setText(c2dmEmail_);
+			c2dmText.setText(gcmProjectId_);
 			
 			this.initHelper(false);
 		}
@@ -118,12 +118,12 @@ public class SettingsScreen extends Fragment implements OnClickListener {
 		appCode_ = appText.getText().toString();
 		appUniq_ = appUniqText.getText().toString();
 		appPwd_ = md5(pwdText.getText().toString());
-		c2dmEmail_ = c2dmText.getText().toString();
+		gcmProjectId_ = c2dmText.getText().toString();
 		
 		editor.putString("app_code", appCode_);
 		editor.putString("app_uniq", appUniq_);
 		editor.putString("app_pwd", appPwd_);
-		editor.putString("c2dm_email", c2dmEmail_);
+		editor.putString("c2dm_email", gcmProjectId_);
 		editor.commit(); 
 		
 		this.initHelper(true);
@@ -142,8 +142,8 @@ public class SettingsScreen extends Fragment implements OnClickListener {
 		}
 		// if an email address for the C2DM service is set then try and register for push
 		// notifications from the main Activity
-		if (c2dmEmail_ != null && !c2dmEmail_.equals("")) {
-			((MainActivity)this.getActivity()).registerForNotifications(c2dmEmail_);
+		if (gcmProjectId_ != null && !gcmProjectId_.equals("")) {
+			((MainActivity)this.getActivity()).registerForNotifications(gcmProjectId_);
 		}
 	}
 }

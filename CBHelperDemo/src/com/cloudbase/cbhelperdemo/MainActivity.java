@@ -27,6 +27,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.Menu;
+import com.google.android.gcm.GCMRegistrar;
 
 public class MainActivity extends FragmentActivity implements
 		ActionBar.TabListener {
@@ -37,14 +38,21 @@ public class MainActivity extends FragmentActivity implements
 	 */
 	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
 	public static CBHelper helper;
-	public String c2dmRegistrationId;
+	public static String c2dmRegistrationId;
+	public static String gcmRegistrationId;
 
-	public void registerForNotifications(String c2dmId) {
-		// register for notifications
-		Intent registrationIntent = new Intent("com.google.android.c2dm.intent.REGISTER");
-		registrationIntent.putExtra("app", PendingIntent.getBroadcast(this, 0, new Intent(), 0)); // boilerplate
-		registrationIntent.putExtra("sender", c2dmId);
-		startService(registrationIntent);
+	public void registerForNotifications(String cgmId) {
+		// register for GCM notifications
+		GCMRegistrar.checkDevice(this);
+		GCMRegistrar.checkManifest(this);
+		final String regId = GCMRegistrar.getRegistrationId(this);
+		Log.d("CloudBase", "tried registration with id " + regId);
+		if (regId.equals("")) {
+			GCMRegistrar.register(this, cgmId);
+		} else {
+			Log.v("CloudBase", "Already registered");
+			MainActivity.gcmRegistrationId = regId;
+		}
 	}
 	
 	@Override

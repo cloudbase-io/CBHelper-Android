@@ -613,41 +613,45 @@ public class CBHelper implements CBHelperResponder {
 	}
 	
 	/**
-	 * Subscribes the current device, with the Key received from Google's C2DM to a notification channel. By default all 
+	 * Subscribes the current device, with the Key received from Google's C2DM or GCM to a notification channel. By default all 
 	 * devices are automatically subscribed to the "All" channel.
 	 * This API request will not be queued
-	 * @param deviceKey The registration id received from the Google's C2DM 
+	 * @param deviceKey The registration id received from the Google's C2DM/GCM 
 	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
 	 * 	created
+	 * @param isC2DM Whether to use the C2DM or the GCM network to send the push notification
 	 */
-	public void notificationSubscribeDevice(String deviceKey, String channel) {
-		notificationSubscribeDevice(deviceKey, channel, null);
-	}
+	public void notificationSubscribeDevice(String deviceKey, String channel, boolean isC2DM) {
+		notificationSubscribeDevice(deviceKey, channel, isC2DM, null);
+	} 
 	/**
-	 * Subscribes the current device, with the Key received from Google's C2DM to a notification channel. By default all 
+	 * Subscribes the current device, with the Key received from Google's C2DM or GCM to a notification channel. By default all 
 	 * devices are automatically subscribed to the "All" channel.
 	 * This API request will not be queued
-	 * @param deviceKey deviceKey The registration id received from the Google's C2DM 
+	 * @param deviceKey deviceKey The registration id received from the Google's C2DM/GCM
 	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
+	 * @param isC2DM Whether to use the C2DM or the GCM network to send the push notification
 	 * @param responder A CBHelperResponder object to handle the response from the cloudbase.io APIs
 	 */
-	public void notificationSubscribeDevice(String deviceKey, String channel, CBHelperResponder responder) {
-		this.notificationSubscribeDevice(deviceKey, channel, responder, false);
+	public void notificationSubscribeDevice(String deviceKey, String channel, boolean isC2DM, CBHelperResponder responder) {
+		this.notificationSubscribeDevice(deviceKey, channel, responder, isC2DM, false);
 	}
 	/**
-	 * Subscribes the current device, with the Key received from Google's C2DM to a notification channel. By default all 
+	 * Subscribes the current device, with the Key received from Google's C2DM or GCM to a notification channel. By default all 
 	 * devices are automatically subscribed to the "All" channel.
-	 * @param deviceKey deviceKey The registration id received from the Google's C2DM 
+	 * @param deviceKey deviceKey The registration id received from the Google's C2DM/GCM 
 	 * @param channel The name of the channel to subscribe to. If the given channel does not exist then it is automatically
 	 * @param responder A CBHelperResponder object to handle the response from the cloudbase.io APIs
+	 * @param isC2DM Whether to use the C2DM or the GCM network to send the push notification
 	 * @param shouldQueue whether the request should be queued if connectivity is not available
 	 */
-	public void notificationSubscribeDevice(String deviceKey, String channel, CBHelperResponder responder, boolean shouldQueue) {
+	public void notificationSubscribeDevice(String deviceKey, String channel, CBHelperResponder responder, boolean isC2DM, boolean shouldQueue) {
 		Map<String, String> subForm = new HashMap<String, String>();
 		
 		subForm.put("action", "subscribe");
 	    subForm.put("device_key", deviceKey);
 	    subForm.put("device_network", "and");
+	    subForm.put("android_network", (isC2DM?"c2dm":"gcm"));
 	    subForm.put("channel", channel);
 	    
 		String url = this.getUrl() + this.appCode + "/notifications-register";
@@ -721,11 +725,51 @@ public class CBHelper implements CBHelperResponder {
 		Map<String, String> subForm = new HashMap<String, String>();
 	    
 		subForm.put("channel", channel);
-	    subForm.put("cert_type", "prod");
+	    subForm.put("cert_type", "c2dm");
 	    subForm.put("alert", notificationText);
 	    subForm.put("badge", "");
 	    subForm.put("sound", "");
 		
+	    String url = this.getUrl() + this.appCode + "/notifications";
+	    
+	    Hashtable<String, String> preparedPost = this.preparePostParams(subForm, null);
+	    
+	    this.startRequest(url, "notifications", null, preparedPost, null, null, shouldQueue);
+	}
+	
+	/**
+	 * Pushes a notification to a list of channels using the Google Cloud Messaging system
+	 * @param notificationText The text for the notification
+	 * @param tickerText The ticker text for the GCM message
+	 * @param contentTitle The content title for the GCM message
+	 * @param contentText The text for the GCM message
+	 * @param channel The channel this notification should be sent to
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void sendGCMNotification(String notificationText, String tickerText, String contentTitle, String contentText, ArrayList<String> channels, boolean shouldQueue) {
+		for (String channel : channels) {
+			sendGCMNotification(notificationText, tickerText, contentTitle, contentText, channel, shouldQueue);
+		}
+	}
+	
+	/**
+	 * Pushes a notification using the Google Cloud Messaging system
+	 * @param notificationText The text for the notification
+	 * @param tickerText The ticker text for the GCM message
+	 * @param contentTitle The content title for the GCM message
+	 * @param contentText The text for the GCM message
+	 * @param channel The channel this notification should be sent to
+	 * @param shouldQueue whether the request should be queued if connectivity is not available
+	 */
+	public void sendGCMNotification(String notificationText, String tickerText, String contentTitle, String contentText, String channel, boolean shouldQueue) {
+		Map<String, String> subForm = new HashMap<String, String>();
+	    
+		subForm.put("channel", channel);
+	    subForm.put("cert_type", "gcm");
+	    subForm.put("alert", notificationText);
+	    subForm.put("gcm_ticker_text", tickerText);
+	    subForm.put("gcm_content_title", contentTitle);
+	    subForm.put("gcm_content_text", contentText);
 	    String url = this.getUrl() + this.appCode + "/notifications";
 	    
 	    Hashtable<String, String> preparedPost = this.preparePostParams(subForm, null);
@@ -1296,7 +1340,10 @@ public class CBHelper implements CBHelperResponder {
 	// from cloudbase and save it in the CBHelper global variable
 	@SuppressWarnings("unchecked")
 	public void handleResponse(CBQueuedRequest req, CBHelperResponse res) {
-		if (res.getFunction().equals("register-device")) {
+		if (res == null) {
+			return;
+		}
+		if (res.getFunction().equals("register-device") && res.isSuccess()) {
 			Map<String, Object> map = (Map<String, Object>)res.getData();
 			if (map.containsKey("sessionid"))
 				this.sessionId = (String)map.get("sessionid");

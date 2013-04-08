@@ -153,10 +153,15 @@ public class CBHelperRequest implements Runnable {
 					gsonBuilder.registerTypeAdapter(Object.class, new CBNaturalDeserializer());
 					Gson gson = gsonBuilder.create();
 					Map<String, Object> responseData = gson.fromJson(responseString,Map.class);
-					Map<String, Object> outputData = (Map<String, Object>)responseData.get(this.request.getCloudbaseFunction());
-					resp.setData(outputData.get("message"));
-					resp.setErrorMessage((String)outputData.get("error"));
-					resp.setSuccess(((String)outputData.get("status")).equals("OK"));
+					if (responseData == null) {
+						resp.setErrorMessage("Empty response data");
+						resp.setSuccess(false);
+					} else {
+						Map<String, Object> outputData = (Map<String, Object>)responseData.get(this.request.getCloudbaseFunction());
+						resp.setData(outputData.get("message"));
+						resp.setErrorMessage((String)outputData.get("error"));
+						resp.setSuccess(((String)outputData.get("status")).equals("OK"));
+					}
 				}
 
 				// now that the response object is ready use the Handler we have been handed from the

@@ -10,7 +10,7 @@
     <string name="app_code_hint">Application Code</string>
     <string name="app_uniq_hint">Application Unique</string>
     <string name="app_pwd_hint">Application Password</string>
-    <string name="c2dm_hint">C2DM Sender Email</string>
+    <string name="c2dm_hint">GCM Project Id</string>
     <string name="save_button_text">Save</string>
     <string name="settings_title">Settings</string>
     <string name="log_title">Log</string>
