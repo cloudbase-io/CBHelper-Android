@@ -39,6 +39,7 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 	 * This property is the maximum number of results to be returned by the search
 	 */
 	private int limit;
+	private int offset;
 	private String field;
 	private Object value;
 	private CBSearchConditionOperator operator;
@@ -47,12 +48,14 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 	public static final String CBSearchKey = "cb_search_key";
 	public static final String CBSortKey = "cb_sort_key";
 	public static final String CBLimitKey = "cb_limit";
+	public static final String CBOffsetKey = "cb_offset";
 	
 	/**
 	 * Creates an empty search condition object
 	 */
 	public CBSearchCondition() {
 		this.limit = -1;
+		this.offset = -1;
 		
 		this.setCommandType(CBDataAggregationCommandType.CBDataAggregationMatch);
 	}
@@ -68,6 +71,7 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 		this.setOperator(op);
 		this.setValue(value);
 		this.limit = -1;
+		this.offset = -1;
 		
 		this.setCommandType(CBDataAggregationCommandType.CBDataAggregationMatch);
 	}
@@ -96,6 +100,7 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 
         this.setValue(searchQuery);
         this.limit = -1;
+        this.offset = -1;
         
         this.setCommandType(CBDataAggregationCommandType.CBDataAggregationMatch);
 	}
@@ -129,6 +134,7 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 		this.setOperator(CBSearchConditionOperator.CBOperatorEqual);
 		this.setValue(searchQuery);
 		this.limit = -1;
+		this.offset = -1;
 		
 		this.setCommandType(CBDataAggregationCommandType.CBDataAggregationMatch);
 	}
@@ -214,6 +220,9 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 	    
 	    if (this.getLimit() > 0)
 	    	finalConditions.put(CBLimitKey, "" + this.getLimit());
+	    
+	    if (this.getOffset() > 0)
+	    	finalConditions.put(CBOffsetKey, "" + this.getOffset());
 	    
 	    return finalConditions;
 	}
@@ -323,5 +332,13 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 
 	public void setLimit(int limit) {
 		this.limit = limit;
+	}
+
+	public int getOffset() {
+		return offset;
+	}
+
+	public void setOffset(int offset) {
+		this.offset = offset;
 	}
 }
