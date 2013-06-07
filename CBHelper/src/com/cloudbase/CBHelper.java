@@ -1196,7 +1196,7 @@ public class CBHelper implements CBHelperResponder {
 	}
 	
 	private String getQueueLockFile() {
-		String queueFolder = this.applicationActivity.getCacheDir().getAbsolutePath() + File.pathSeparator + "cb_queue";
+		String queueFolder = this.applicationActivity.getCacheDir().getAbsolutePath() + File.separator + "cb_queue";
 		queueFolder += File.separator + "cb_queue_lock";
 		
 		return queueFolder;
