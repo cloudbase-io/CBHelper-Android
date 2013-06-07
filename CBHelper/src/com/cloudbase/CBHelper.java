@@ -1153,10 +1153,11 @@ public class CBHelper implements CBHelperResponder {
 		if (this.isQueueLocked())
 			return 0;
 		File queueFolder = new File(this.getQueueFolder() + File.separator);
+		String queueLockFile = this.getQueueLockFile();
 		int size = 0;
 		//return queueFolder.listFiles().length;
 		for (File curFile : queueFolder.listFiles()) {
-			if (curFile.getAbsolutePath().equals(this.getQueueLockFile()))
+			if (curFile.getAbsolutePath().equals(queueLockFile))
 				continue;
 			
 			size++;
@@ -1168,8 +1169,11 @@ public class CBHelper implements CBHelperResponder {
 	private ArrayList<String> getQueue() {
 		ArrayList<String> queue = new ArrayList<String>();
 		File queueFolder = new File(this.getQueueFolder() + File.separator);
+		String queueLockFile = this.getQueueLockFile();
 		
 		for (File curQueueFile : queueFolder.listFiles()) {
+			if (curQueueFile.getAbsolutePath().equals(queueLockFile))
+				continue;			
 			queue.add(curQueueFile.getAbsolutePath());
 		}
 		
