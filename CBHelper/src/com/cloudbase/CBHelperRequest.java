@@ -199,11 +199,11 @@ public class CBHelperRequest implements Runnable {
 		this.responder = responder;
 	}
 
-	public Handler getmHandler() {
+	public Handler getHandler() {
 		return mHandler;
 	}
 
-	public void setmHandler(Handler mHandler) {
+	public void setHandler(Handler mHandler) {
 		this.mHandler = mHandler;
 	}
 

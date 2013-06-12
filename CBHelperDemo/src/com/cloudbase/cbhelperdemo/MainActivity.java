@@ -20,7 +20,6 @@ import com.cloudbase.*;
 
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;

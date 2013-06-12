@@ -57,7 +57,7 @@ public class SettingsScreen extends Fragment implements OnClickListener {
             // Create Hex String
             StringBuffer hexString = new StringBuffer();
             for (int i=0; i<messageDigest.length; i++)
-                hexString.append(Integer.toHexString(0xFF & messageDigest[i]));
+            	hexString.append(String.format("%02x", messageDigest[i]));
             return hexString.toString();
 
         } catch (NoSuchAlgorithmException e) {

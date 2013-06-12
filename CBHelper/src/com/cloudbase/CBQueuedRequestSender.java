@@ -21,6 +21,7 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 /**
@@ -59,8 +60,8 @@ public class CBQueuedRequestSender implements Runnable {
 				CBHelperRequest req = new CBHelperRequest(requestObject, this.helper);
 				if (this.helper.getDefaultQueueResponder() != null) {
 					req.setResponder(this.helper.getDefaultQueueResponder());
-					Handler handler = new Handler();
-					req.setmHandler(handler);
+					Handler handler = new Handler(Looper.getMainLooper());
+					req.setHandler(handler);
 				}
 				
 				req.setQueueFileName(curRequest);
