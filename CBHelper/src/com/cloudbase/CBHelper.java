@@ -32,6 +32,8 @@ import com.cloudbase.datacommands.CBDataAggregationCommand;
 import com.cloudbase.datacommands.CBSearchCondition;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import android.app.Activity;
 import android.content.Context;
@@ -489,6 +491,52 @@ public class CBHelper implements CBHelperResponder {
 		
 		String url = this.getUrl() + this.appCode + "/" + collection + "/insert";
 		Hashtable<String, String> preparedPost = this.preparePostParams(finalDocument, null);
+		
+		this.startRequest(url, "data", null, preparedPost, attachments, responder, shouldQueue);
+	}
+	
+	/**
+	 * Updates a document in a collection in the Cloud Database. The documents to update are identified using the CBSearchCondition
+	 * parameter to the method.
+	 * @param document The new object to update
+	 * @param cond The search condition to match the documents to be updated in the Cloud Database
+	 * @param collection The name of the collection containing the documents to update
+	 * @param isUpsert Whether this is an upsert request (if the document doesn't exist then insert)
+	 * @param attachments An ArrayList of File objects to be attached to the new document
+	 * @param shouldQueue Whether the request should be queued
+	 * @throws Exception
+	 */
+	public void updateDocument(Object document, CBSearchCondition cond, String collection, boolean isUpsert, ArrayList<File> attachments) throws Exception {
+		this.updateDocument(document, cond, collection, isUpsert, attachments, null, false);
+	}
+	
+	/**
+	 * Updates a document in a collection in the Cloud Database. The documents to update are identified using the CBSearchCondition
+	 * parameter to the method.
+	 * @param document The new object to update
+	 * @param cond The search condition to match the documents to be updated in the Cloud Database
+	 * @param collection The name of the collection containing the documents to update
+	 * @param isUpsert Whether this is an upsert request (if the document doesn't exist then insert)
+	 * @param attachments An ArrayList of File objects to be attached to the new document
+	 * @param responder A reponder to receive the cloudbase.io response
+	 * @param shouldQueue Whether the request should be queued
+	 * @throws Exception
+	 */
+	public void updateDocument(Object document, CBSearchCondition cond, String collection, boolean isUpsert, ArrayList<File> attachments, CBHelperResponder responder, boolean shouldQueue) throws Exception {
+		JsonElement tmpElement = CBHelper.jsonParser.toJsonTree(document);
+		
+		if ( !tmpElement.isJsonObject() ) {
+			throw new Exception("Update is allowed only on objects");
+		}
+		
+		JsonObject tmpObject = (JsonObject)tmpElement;
+		tmpObject.add("cb_search_key", CBHelper.jsonParser.toJsonTree(cond.serializeConditions(cond)));
+		if ( isUpsert ) {
+			tmpObject.addProperty("cb_upsert", 1);
+		}
+		
+		String url = this.getUrl() + this.appCode + "/" + collection + "/update";
+		Hashtable<String, String> preparedPost = this.preparePostParams(tmpObject, null);
 		
 		this.startRequest(url, "data", null, preparedPost, attachments, responder, shouldQueue);
 	}
@@ -1240,7 +1288,11 @@ public class CBHelper implements CBHelperResponder {
 			post.put("location_data", CBHelper.jsonParser.toJson(locData));
 		}
 		
-		post.put("post_data", CBHelper.jsonParser.toJson(postData));
+		if ( postData instanceof JsonObject ) {
+			post.put("post_data", ((JsonObject)postData).toString());
+		} else {
+			post.put("post_data", CBHelper.jsonParser.toJson(postData));
+		}
 		
 		return post;
 	}
