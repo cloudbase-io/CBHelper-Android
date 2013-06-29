@@ -278,7 +278,7 @@ public class CBSearchCondition extends CBDataAggregationCommand {
 	            case CBOperatorLessOrEqual:
 	            case CBOperatorSize:
 	            case CBOperatorType:
-	            	cond.put(conditionsGroup.getOperator().toString(), conditionsGroup.getValue().toString());
+	            	cond.put(conditionsGroup.getOperator().toString(), conditionsGroup.getValue());
 	            	output.put(conditionsGroup.getField(), cond);
 	                break;
 	            case CBOperatorMod:
