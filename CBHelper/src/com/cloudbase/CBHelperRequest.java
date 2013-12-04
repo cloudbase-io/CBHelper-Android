@@ -29,6 +29,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
 import com.google.gson.Gson;
@@ -67,7 +68,9 @@ public class CBHelperRequest implements Runnable {
 
 	@SuppressWarnings("unchecked")
 	public void run() {
-		HttpClient httpclient = new DefaultHttpClient();
+		//HostnameVerifier hostnameVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+		HttpClient httpclient = new DefaultHttpClient();//this.getTolerantClient();
+		
 		HttpPost httppost = new HttpPost(this.request.getUrl());
 
 		try {
@@ -80,7 +83,7 @@ public class CBHelperRequest implements Runnable {
 			while (params.hasMoreElements())
 			{
 				String curKey = params.nextElement();
-				entity.addPart(new CBStringPart(curKey, this.request.getParameters().get(curKey)));
+				entity.addPart(new CBStringPart(curKey, this.request.getParameters().get(curKey), HTTP.UTF_8));
 			}
 
 			// if we have file attachments then add each file to the multipart request

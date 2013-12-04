@@ -773,7 +773,7 @@ public class CBHelper implements CBHelperResponder {
 		Map<String, String> subForm = new HashMap<String, String>();
 	    
 		subForm.put("channel", channel);
-	    subForm.put("cert_type", "c2dm");
+	    subForm.put("cert_type", "production");
 	    subForm.put("alert", notificationText);
 	    subForm.put("badge", "");
 	    subForm.put("sound", "");
@@ -813,7 +813,7 @@ public class CBHelper implements CBHelperResponder {
 		Map<String, String> subForm = new HashMap<String, String>();
 	    
 		subForm.put("channel", channel);
-	    subForm.put("cert_type", "gcm");
+	    subForm.put("cert_type", "production");
 	    subForm.put("alert", notificationText);
 	    subForm.put("gcm_ticker_text", tickerText);
 	    subForm.put("gcm_content_title", contentTitle);
